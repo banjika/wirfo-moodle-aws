@@ -161,6 +161,11 @@ These are **not** in Phase 1. Do not ask Claude Code to add them — it has been
 - AWS WAF rule sets (the *attachment point* exists via CloudFront; rules are Phase 2)
 - AWS Config, Security Hub, multi-account AWS Organizations setup
 
+# Add a line to README.md
+Add-Content README.md "`n## Status: Active development"
+
+
+
 ---
 
 ## License
