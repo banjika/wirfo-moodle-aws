@@ -1,0 +1,70 @@
+# ---- Terraform ----
+# Local .terraform directories
+**/.terraform/*
+
+# Terraform state files (must never be committed)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Terraform plan output (often contains sensitive values)
+*.tfplan
+*.tfplan.*
+tfplan
+tfplan.*
+
+# tfvars files often contain secrets — commit only example versions
+*.tfvars
+*.tfvars.json
+!*.example.tfvars
+!example.tfvars
+
+# CLI configuration files
+.terraformrc
+terraform.rc
+
+# Lock file: keep .terraform.lock.hcl committed (it pins providers).
+# Do NOT add it here.
+
+# ---- IDE / editor ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ---- Python (for any helper scripts / Lambda packaging) ----
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# ---- Node (for any tooling) ----
+node_modules/
+
+# ---- Secrets / credentials ----
+# Never commit AWS credentials or .env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials
+.aws/
+
+# ---- Build / packaging artefacts ----
+dist/
+build/
+*.zip
+*.tar.gz
+
+# ---- Claude Code session data ----
+.claude/sessions/
