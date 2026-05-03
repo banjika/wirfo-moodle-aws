@@ -564,6 +564,16 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
 - **Depends on:** T-029
 - **Touch points:** documentation only
 
+### T-035 — Remove scaffold lint suppression
+
+- **Stage / module:** 10 / cross-cutting
+- **Deliverable:** Delete `terraform/environments/pilot/.tflint.hcl` (scaffold lint suppression introduced in T-002).
+- **Acceptance criteria:**
+  - File no longer exists.
+  - `tflint --recursive terraform/environments/pilot` reports zero warnings WITHOUT the suppression — meaning every variable and the `us_east_1` provider alias is genuinely consumed.
+- **Depends on:** T-009 through T-026 (all module-wiring tasks).
+- **Touch points:** delete 1 file.
+
 ---
 
 ## Cross-cutting
@@ -650,8 +660,9 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
 | T-032 | README polish | cross | T-030 |
 | T-033 | Operator runbooks | cross | T-029, T-030, T-031, T-008 |
 | T-034 | Banjika first-run validation checklist | cross | T-033 |
+| T-035 | Remove scaffold lint suppression | 10 | T-009…T-026 |
 
-**Total:** 34 tasks. Critical path runs `T-001 → T-002 → T-003 → T-004 → T-005 → T-008 → T-010 → T-013 → T-018 → T-019 → T-020 → T-021 → T-025 → T-029 → T-030`, ≈ 15 sequential PRs.
+**Total:** 35 tasks. Critical path runs `T-001 → T-002 → T-003 → T-004 → T-005 → T-008 → T-010 → T-013 → T-018 → T-019 → T-020 → T-021 → T-025 → T-029 → T-030`, ≈ 15 sequential PRs.
 
 ---
 
