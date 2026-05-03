@@ -295,6 +295,7 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
   - `terraform plan` shows 1 subnet group, 1 parameter group, 1 replication group.
   - `tfsec` `aws-elasticache-enable-at-rest-encryption`, `aws-elasticache-enable-in-transit-encryption`, `aws-elasticache-add-description-for-security-group` pass.
   - `transit_encryption_mode = "required"` confirmed in plan.
+  - `aws_elasticache_parameter_group` `family` is `"valkey7"` (no dot, no patch version — matches `engine_version = "7.2"` as required by the AWS API). `terraform apply` must succeed first time without `InvalidParameterCombinationException`.
 - **Depends on:** T-013
 - **Touch points:** 4 module files + 1 root edit
 
@@ -356,6 +357,10 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
 - **Acceptance criteria:**
   - `terraform plan` shows 1 instance, 1 EIP, 1 association. Instance has IMDSv2 required, gp3 encrypted root, and the user-data hash is a function of all referenced inputs.
   - `tfsec` `aws-ec2-no-public-ip` reviewed and explicitly skipped (hard-rule #1: EC2 in public subnet); `aws-ec2-enforce-http-token-imds` passes; `aws-ec2-enable-at-rest-encryption` passes.
+  - First line of user-data after the shebang is: `exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1`.
+  - Second line of user-data is: `set -euxo pipefail`.
+  - Final action of user-data writes `/var/log/user-data.success` on full completion (used by a CloudWatch alarm or manual `stat` check via SSM Session Manager after first boot).
+  - Apache VirtualHost block in the rendered template includes `ServerName academy.wirfocloud.com` and `UseCanonicalName On` (verified in `user_data.sh.tftpl` directly, or via SSM Session Manager post-boot).
 - **Depends on:** T-013 (sg, instance profile), T-014 (db endpoint), T-015 (cache endpoint), T-017 (efs id)
 - **Touch points:** 4 module files + 1 template file
 
@@ -390,6 +395,7 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
 - **Acceptance criteria:**
   - `terraform plan` shows 1 distribution + 2 Route 53 records.
   - `tfsec` `aws-cloudfront-enable-waf` flagged and skipped with inline comment (WAF is Phase 2); `aws-cloudfront-use-secure-tls-policy` passes (`TLSv1.2_2021`).
+  - Default cache behavior's `origin_request_policy_id` resolves to the AWS-managed `Managed-AllViewer` policy (must **not** be `Managed-AllViewerExceptHostHeader`) — forwards `Host`, all query strings, and all cookies to the dynamic Moodle origin, enabling correct wwwroot link generation via Apache `UseCanonicalName On`.
 - **Depends on:** T-019 (origin DNS), T-006 (cert exists)
 - **Touch points:** 4 files in module
 

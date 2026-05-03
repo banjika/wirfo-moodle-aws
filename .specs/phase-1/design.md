@@ -147,6 +147,12 @@ Module names are fixed by `CLAUDE.md`. No top-level modules will be invented. Th
 - **Outputs:** `instance_id`, `instance_arn`, `eip_public_ip`, `eip_public_dns`.
 - **Depends on:** `network`, `security`, `data`, `cache`, `storage` (user-data needs all the endpoints and secret ARNs).
 
+#### Moodle wwwroot consistency
+Three settings must align to prevent Moodle generating links that point at the EC2 origin hostname instead of the CloudFront FQDN:
+1. `config.php` sets `$CFG->wwwroot = "https://academy.wirfocloud.com"` at install time (rendered from `var.domain_name` in the user-data template).
+2. Apache VirtualHost includes `ServerName academy.wirfocloud.com` and `UseCanonicalName On`.
+3. CloudFront's origin request policy forwards the `Host` header — see §2.7.
+
 ### 2.4 `modules/data`
 
 - **Purpose:** RDS PostgreSQL.
@@ -208,6 +214,9 @@ Module names are fixed by `CLAUDE.md`. No top-level modules will be invented. Th
 - **Inputs:** `project_name`, `environment`, `domain_name`, `dmarc_rua_address`, `origin_domain_name` (from `compute.eip_public_dns`), `acm_certificate_arn` (data-source lookup in us-east-1).
 - **Outputs:** `cloudfront_distribution_id`, `cloudfront_distribution_arn`, `cloudfront_domain_name`, `ses_domain_identity_arn`.
 - **Depends on:** `compute` (origin), `bootstrap` (cert exists already).
+
+#### Moodle wwwroot consistency — Host header forwarding
+The default cache behavior uses the AWS-managed `Managed-AllViewer` origin request policy, **not** `Managed-AllViewerExceptHostHeader`. `Managed-AllViewer` forwards the `Host` header to the EC2 origin; Apache's `UseCanonicalName On` directive needs it to build correct absolute URLs. Using `AllViewerExceptHostHeader` strips `Host`, causing Apache to fall back to the EC2 private hostname — producing broken Moodle links even with `$CFG->wwwroot` correctly set.
 
 ### 2.8 `modules/observability`
 
@@ -475,7 +484,7 @@ All design-time open questions have been resolved. The items below are the **onl
 | # | Action | When | Notes |
 |---|---|---|---|
 | 1 | **Verify the Route 53 hosted zone** for `wirfocloud.com` exists in this AWS account and registrar NS records match. | Before bootstrap apply | `aws route53 list-hosted-zones --query "HostedZones[?Name=='wirfocloud.com.']"` and `dig NS wirfocloud.com +short`. Both `terraform/bootstrap/` and `modules/dns_cdn` read this zone via data source with no fallback — apply fails if the zone is missing. |
-| 2 | **Decide on SES production-access timing.** | Before opening the pilot to non-allow-listed users | Submit the AWS support case to leave the SES sandbox at least 24 h before go-live. Until then, manually verify each pilot recipient's email address in the SES console (eu-west-1). Procedure documented in `docs/runbooks/ses.md`. |
+| 2 | **Verify SES recipient addresses before any user activity.** | Before users attempt signup or password reset | While SES is in sandbox, signup verification and password reset emails will silently fail for unverified addresses. For the pilot, ALL participant email addresses must be SES-verified in eu-west-1 BEFORE users attempt signup or password reset. Production access (sandbox exit) is required before public/uncontrolled launch. Submit the AWS support case at least 24 h before go-live. Procedure in `docs/runbooks/ses.md`. |
 | 3 | **Provide `alarm_email` value.** | Before workload apply | Required Terraform variable, no default. Email confirmation must be clicked once SNS sends the subscription email. |
 | 4 | **Provide `moodle_admin_email` value.** | Before workload apply | Required Terraform variable, no default. Recommend a non-personal mailbox (e.g., `moodle-admin@wirfocloud.com`). While the SES account is sandboxed, this address must be SES-verified. |
 | 5 | **Set up an AWS Budgets billing alarm** (≥120% of $80/month) with email notification. | Before bootstrap apply | One-off manual step — kept out of Terraform so it survives even a complete state-loss scenario. Documented in `docs/runbooks/first-deploy.md`. |
