@@ -22,6 +22,7 @@ tfplan.*
 *.tfvars.json
 !*.example.tfvars
 !example.tfvars
+!*.tfvars.example
 
 # CLI configuration files
 .terraformrc
