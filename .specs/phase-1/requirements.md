@@ -1,7 +1,7 @@
-# Phase 1 Requirements Document — Moodle LMS on AWS (Cost-Optimized Pilot)
+﻿# Phase 1 Requirements Document — Moodle LMS on AWS (Cost-Optimized Pilot)
 
 **Project:** Moodle Learning Management System
-**Domain:** academy.wirfocloud.com
+**Domain:** academy.wirfoncloud.com
 **Region:** eu-west-1 (Ireland)
 **Document Status:** Phase 1 — Pilot deployment, no payments
 **Target Audience:** 50–100 concurrent users
@@ -70,11 +70,11 @@ Phase 1 is a **production-foundation pilot deployment** of a Moodle LMS on AWS. 
 - CloudWatch Logs for Moodle application logs, web server logs, and system logs (separate log groups, 30-day retention).
 - CloudWatch Agent on the EC2 instance for memory, disk, and CPU-credit metrics.
 - A small set of **critical** CloudWatch alarms (CPU >80%, CPU credits <20%, disk >85%, RDS storage >85%, RDS connection count >80% of max, ACM cert expiry <30 days, instance status check failed). All alarms publish to a single SNS topic with email subscriptions.
-- CloudWatch Synthetics canary hitting `https://academy.wirfocloud.com/login/index.php` every 5 minutes as an external "are we up?" probe.
+- CloudWatch Synthetics canary hitting `https://academy.wirfoncloud.com/login/index.php` every 5 minutes as an external "are we up?" probe.
 
 **DNS & Certificates**
 
-- Route 53 A and AAAA records for `academy.wirfocloud.com` pointing to the CloudFront distribution.
+- Route 53 A and AAAA records for `academy.wirfoncloud.com` pointing to the CloudFront distribution.
 - ACM-issued public TLS certificate in `us-east-1` (required for CloudFront).
 
 **Backup & Recovery**
@@ -123,7 +123,7 @@ Phase 1 is a **production-foundation pilot deployment** of a Moodle LMS on AWS. 
 The system shall provide the following user-facing capabilities. EARS-style phrasing is preserved for testability.
 
 **FR-1: Public Access via Custom Domain**
-THE Moodle_Platform SHALL be accessible at `https://academy.wirfocloud.com` over HTTPS only, with HTTP requests automatically redirected to HTTPS.
+THE Moodle_Platform SHALL be accessible at `https://academy.wirfoncloud.com` over HTTPS only, with HTTP requests automatically redirected to HTTPS.
 
 **FR-2: User Authentication & Self-Service**
 THE Moodle_Platform SHALL allow users to register accounts, verify email addresses, log in, log out, and reset forgotten passwords using Moodle's built-in authentication.
@@ -141,7 +141,7 @@ THE Moodle_Platform SHALL store user-uploaded files on the EFS-backed `/var/mood
 THE Moodle_Platform SHALL store user sessions in the Valkey cache so that login state survives PHP-FPM worker restarts.
 
 **FR-7: Outbound Email**
-THE Moodle_Platform SHALL send transactional email (registration verification, password reset, course notifications) via Amazon SES using the verified sender domain `wirfocloud.com` with SPF, DKIM, and DMARC records configured.
+THE Moodle_Platform SHALL send transactional email (registration verification, password reset, course notifications) via Amazon SES using the verified sender domain `wirfoncloud.com` with SPF, DKIM, and DMARC records configured.
 
 **FR-8: Administrative Console Access**
 Administrators SHALL access Moodle administrative functions through the standard Moodle web UI. Operating-system-level admin access to the EC2 instance SHALL be available exclusively via AWS Systems Manager Session Manager.
@@ -198,7 +198,7 @@ Administrators SHALL access Moodle administrative functions through the standard
                            ▼
               ┌──────────────────────┐
               │  Route 53 (A/AAAA)   │
-              │ academy.wirfocloud   │
+              │ academy.wirfoncloud   │
               └──────────┬───────────┘
                          ▼
               ┌──────────────────────┐
@@ -274,7 +274,7 @@ Administrators SHALL access Moodle administrative functions through the standard
 3. **Data Protection**
    - At rest: RDS encrypted with `aws/rds`; EBS encrypted with `aws/ebs`; EFS encrypted with `aws/elasticfilesystem`; Secrets Manager encrypted with `aws/secretsmanager`; CloudWatch Logs encrypted with `aws/logs`; S3 backup buckets with SSE-S3.
    - In transit: TLS 1.2+ everywhere — CloudFront viewer policy redirects HTTP→HTTPS; RDS `rds.force_ssl=1`; ElastiCache `transit_encryption_enabled=true`; EFS mounted with `tls`.
-   - Moodle `$CFG->wwwroot` set to `https://academy.wirfocloud.com` and `$CFG->cookiesecure=true`.
+   - Moodle `$CFG->wwwroot` set to `https://academy.wirfoncloud.com` and `$CFG->cookiesecure=true`.
 
 4. **Audit**
    - CloudTrail management-events trail, log-file validation enabled, S3 bucket versioned + object-locked.

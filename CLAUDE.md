@@ -1,4 +1,4 @@
-# Project: Moodle on AWS — Phase 1 Pilot
+﻿# Project: Moodle on AWS — Phase 1 Pilot
 
 You are working on a spec-driven Terraform project that deploys a Moodle LMS on AWS for a pilot cohort of 50–100 users. Read this file in full before doing anything else in this repo.
 
@@ -33,7 +33,7 @@ When asked to design, produce `design.md` and stop. When asked to plan tasks, pr
 - **Region:** us-east-1 (N. Virginia) — secondary, for the CloudFront ACM certificate ONLY
 - **Account model:** Single AWS account, single environment (`pilot`)
 - **User scale:** 50–100 concurrent users, no payments, no HA
-- **Domain:** `academy.wirfocloud.com` (Route 53 hosted zone for `wirfocloud.com` is assumed to already exist)
+- **Domain:** `academy.wirfoncloud.com` (Route 53 hosted zone for `wirfoncloud.com` is assumed to already exist)
 - **Cost target:** ~$80/month all-in
 
 ---
