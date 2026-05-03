@@ -40,7 +40,7 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
 
 - **Stage / module:** 0 / `terraform/environments/pilot/`
 - **Deliverable:** workload root files with no resources yet but a complete provider/backend/variable surface matching `design.md` §3, §6.2.
-  - `terraform/environments/pilot/versions.tf` — `required_version = ">= 1.7"`, `hashicorp/aws ~> 5.0`, `random ~> 3.6`, default provider in `eu-west-1`, aliased provider `us_east_1`. `default_tags` on **both** providers (`Project = "moodle-academy"`, `Environment = "pilot"`, `ManagedBy = "terraform"`, `CostCenter = var.cost_center`, merged with `var.extra_tags`).
+  - `terraform/environments/pilot/versions.tf` — `required_version = ">= 1.7"`, `hashicorp/aws >= 5.0, < 6.0`, `random >= 3.6, < 4.0`, default provider in `eu-west-1`, aliased provider `us_east_1`. `default_tags` on **both** providers (`Project = "moodle-academy"`, `Environment = "pilot"`, `ManagedBy = "terraform"`, `CostCenter = var.cost_center`, merged with `var.extra_tags`).
   - `terraform/environments/pilot/backend.tf` — `backend "s3"` with hardcoded `bucket = "wirfo-moodle-tfstate-<account-id>"` (literal placeholder; operator substitutes after T-008), `key = "pilot/terraform.tfstate"`, `region = "eu-west-1"`, `dynamodb_table = "wirfo-moodle-tflock"`, `encrypt = true`.
   - `terraform/environments/pilot/variables.tf` — all 35 rows from design.md §3.
   - `terraform/environments/pilot/main.tf` — empty (module calls added per stage).
@@ -59,7 +59,7 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
 
 - **Stage / module:** 0 / `terraform/bootstrap/`
 - **Deliverable:**
-  - `terraform/bootstrap/versions.tf` — `required_version = ">= 1.7"`, `hashicorp/aws ~> 5.0`, default provider `eu-west-1`, aliased `us_east_1`. `default_tags` mirroring T-002.
+  - `terraform/bootstrap/versions.tf` — `required_version = ">= 1.7"`, `hashicorp/aws >= 5.0, < 6.0`, default provider `eu-west-1`, aliased `us_east_1`. `default_tags` mirroring T-002.
   - `terraform/bootstrap/variables.tf` — the 7 bootstrap variables from design.md §6.1 (with their defaults).
   - `terraform/bootstrap/outputs.tf` — declared but empty `output {}` blocks for `state_bucket_name`, `lock_table_name`, `cloudtrail_bucket_name`, `cloudtrail_arn`, `deploy_role_arn`, `acm_certificate_arn` (filled by later tasks).
   - `terraform/bootstrap/main.tf` — empty (resources added per task).
