@@ -1,4 +1,4 @@
-# Phase 1 Tasks Document — Moodle LMS on AWS
+﻿# Phase 1 Tasks Document — Moodle LMS on AWS
 
 **Project:** Moodle Learning Management System
 **Source-of-truth design:** [`.specs/phase-1/design.md`](./design.md) — approved
@@ -63,7 +63,7 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
   - `terraform/bootstrap/variables.tf` — the 7 bootstrap variables from design.md §6.1 (with their defaults).
   - `terraform/bootstrap/outputs.tf` — declared but empty `output {}` blocks for `state_bucket_name`, `lock_table_name`, `cloudtrail_bucket_name`, `cloudtrail_arn`, `deploy_role_arn`, `acm_certificate_arn` (filled by later tasks).
   - `terraform/bootstrap/main.tf` — empty (resources added per task).
-  - `terraform/bootstrap/data.tf` — `data "aws_caller_identity" "current"`, `data "aws_region" "current"`, `data "aws_route53_zone" "main" { name = "wirfocloud.com." }`.
+  - `terraform/bootstrap/data.tf` — `data "aws_caller_identity" "current"`, `data "aws_region" "current"`, `data "aws_route53_zone" "main" { name = "wirfoncloud.com." }`.
 - **Acceptance criteria:**
   - `terraform -chdir=terraform/bootstrap init` succeeds (local backend, no remote state yet).
   - `terraform -chdir=terraform/bootstrap validate` succeeds.
@@ -223,7 +223,7 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
   - `terraform/modules/security/iam.tf`:
     - `aws_iam_role "moodle_ec2"` (trust `ec2.amazonaws.com`).
     - `aws_iam_role_policy_attachment` × 2 (`AmazonSSMManagedInstanceCore`, `CloudWatchAgentServerPolicy`).
-    - `aws_iam_role_policy` × 3 implementing the design.md §5 row for `moodle_ec2_role`: SecretsManager read on `arn:…:secret:moodle/*`; SES `SendEmail`/`SendRawEmail` with `ses:FromAddress` condition `*@wirfocloud.com`; KMS Decrypt/GenerateDataKey on `aws/secretsmanager` with `kms:ViaService` condition.
+    - `aws_iam_role_policy` × 3 implementing the design.md §5 row for `moodle_ec2_role`: SecretsManager read on `arn:…:secret:moodle/*`; SES `SendEmail`/`SendRawEmail` with `ses:FromAddress` condition `*@wirfoncloud.com`; KMS Decrypt/GenerateDataKey on `aws/secretsmanager` with `kms:ViaService` condition.
     - `aws_iam_instance_profile "moodle_ec2"` referencing the role.
     - `aws_iam_role "aws_backup"` with both `AWSBackupServiceRolePolicyForBackup` and `…ForRestores` attachments.
   - Extend `outputs.tf` with `ec2_instance_profile_name`, `backup_role_arn`.
@@ -360,7 +360,7 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
   - First line of user-data after the shebang is: `exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1`.
   - Second line of user-data is: `set -euxo pipefail`.
   - Final action of user-data writes `/var/log/user-data.success` on full completion (used by a CloudWatch alarm or manual `stat` check via SSM Session Manager after first boot).
-  - Apache VirtualHost block in the rendered template includes `ServerName academy.wirfocloud.com` and `UseCanonicalName On` (verified in `user_data.sh.tftpl` directly, or via SSM Session Manager post-boot).
+  - Apache VirtualHost block in the rendered template includes `ServerName academy.wirfoncloud.com` and `UseCanonicalName On` (verified in `user_data.sh.tftpl` directly, or via SSM Session Manager post-boot).
 - **Depends on:** T-013 (sg, instance profile), T-014 (db endpoint), T-015 (cache endpoint), T-017 (efs id)
 - **Touch points:** 4 module files + 1 template file
 
@@ -387,7 +387,7 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
   - `terraform/modules/dns_cdn/versions.tf` declares the module's required `aws.us_east_1` provider configuration alias (consumed from the workload root).
   - `terraform/modules/dns_cdn/variables.tf`, `outputs.tf`.
   - `terraform/modules/dns_cdn/cloudfront.tf`:
-    - `data "aws_route53_zone" "main" { name = "wirfocloud.com." }`.
+    - `data "aws_route53_zone" "main" { name = "wirfoncloud.com." }`.
     - `data "aws_acm_certificate" "cloudfront" { provider = aws.us_east_1, domain = var.domain_name, statuses = ["ISSUED"], most_recent = true }`.
     - `aws_cloudfront_distribution "moodle"` per design.md §2.7: custom origin = `var.origin_domain_name`, origin protocol HTTPS-only, default behavior `Managed-CachingDisabled` + `Managed-AllViewer`, ordered cache behaviors for `/theme/*`, `/pluginfile.php/*`, `/lib/*`, `*.css`, `*.js` using `Managed-CachingOptimized`, viewer cert TLSv1.2_2021 SNI-only, aliases `[var.domain_name]`, no logging block.
     - `aws_route53_record "a"` and `aws_route53_record "aaaa"` alias records to the CloudFront distribution.
@@ -404,17 +404,17 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
 - **Stage / module:** 7 / `terraform/modules/dns_cdn/` + workload root
 - **Deliverable:**
   - `terraform/modules/dns_cdn/ses.tf`:
-    - `aws_ses_domain_identity "main"` for `wirfocloud.com`.
+    - `aws_ses_domain_identity "main"` for `wirfoncloud.com`.
     - `aws_ses_domain_dkim "main"`.
     - `aws_route53_record "ses_dkim"` × 3 with `for_each` over `aws_ses_domain_dkim.main.dkim_tokens` writing CNAMEs.
     - `aws_route53_record "spf"` TXT (`"v=spf1 include:amazonses.com -all"`) on apex.
-    - `aws_route53_record "dmarc"` TXT (`"v=DMARC1; p=quarantine; rua=mailto:${var.dmarc_rua_address}"`) on `_dmarc.wirfocloud.com`.
+    - `aws_route53_record "dmarc"` TXT (`"v=DMARC1; p=quarantine; rua=mailto:${var.dmarc_rua_address}"`) on `_dmarc.wirfoncloud.com`.
     - `aws_ses_domain_identity_verification "main"` waits for SES to confirm.
   - Extend `outputs.tf` with `ses_domain_identity_arn`.
   - Add `module "dns_cdn" { source = "../../modules/dns_cdn", providers = { aws.us_east_1 = aws.us_east_1 }, … }` to workload root.
 - **Acceptance criteria:**
   - `terraform plan` shows the SES identity, DKIM, 3 DKIM CNAMEs, 1 SPF TXT, 1 DMARC TXT, 1 verification.
-  - After apply, `aws ses get-identity-verification-attributes --identities wirfocloud.com` returns `Success`.
+  - After apply, `aws ses get-identity-verification-attributes --identities wirfoncloud.com` returns `Success`.
 - **Depends on:** T-020
 - **Touch points:** `ses.tf`, `outputs.tf`, `environments/pilot/main.tf`
 
@@ -538,9 +538,9 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
 
 - **Stage / module:** 10 / operator action
 - **Deliverable:**
-  - `curl -I https://academy.wirfocloud.com/login/index.php` returns HTTP 200.
-  - `dig academy.wirfocloud.com` resolves to a CloudFront edge.
-  - `dig _dmarc.wirfocloud.com TXT` returns the DMARC record.
+  - `curl -I https://academy.wirfoncloud.com/login/index.php` returns HTTP 200.
+  - `dig academy.wirfoncloud.com` resolves to a CloudFront edge.
+  - `dig _dmarc.wirfoncloud.com TXT` returns the DMARC record.
   - Synthetics canary in CloudWatch console shows green for 3 consecutive runs (15 min observation).
   - GuardDuty home-region detector enabled; no findings within first hour.
   - Login page renders; admin user (from `moodle_admin_email`) can sign in using the Secrets-Manager-stored initial password.
