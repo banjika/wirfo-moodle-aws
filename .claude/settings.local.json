@@ -10,7 +10,9 @@
       "Bash(tfsec terraform/environments/pilot)",
       "Bash(echo \"TFSEC_EXIT:$?\")",
       "Bash(tflint --chdir=terraform/environments/pilot)",
-      "Bash(terraform init *)"
+      "Bash(terraform init *)",
+      "Bash(tflint --recursive terraform/bootstrap)",
+      "Bash(tflint --chdir=terraform/bootstrap)"
     ]
   }
 }
