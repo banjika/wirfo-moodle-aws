@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(terraform fmt *)",
+      "Bash(echo \"FMT_EXIT:$?\")",
+      "Bash(terraform validate *)",
+      "Bash(echo \"VALIDATE_EXIT:$?\")",
+      "Bash(tflint --recursive terraform/environments/pilot)",
+      "Bash(echo \"TFLINT_EXIT:$?\")",
+      "Bash(tfsec terraform/environments/pilot)",
+      "Bash(echo \"TFSEC_EXIT:$?\")",
+      "Bash(tflint --chdir=terraform/environments/pilot)",
+      "Bash(terraform init *)"
+    ]
+  }
+}
