@@ -1,0 +1,17 @@
+---
+# Checkov configuration for terraform/bootstrap.
+#
+# Inline #checkov:skip annotations are not honoured by checkov 3.2.x
+# on Windows. This config file is the operational suppression
+# mechanism. Inline annotations are retained in state.tf as
+# human-readable intent documentation.
+#
+# Each skip below corresponds to a deliberate Phase 1 design decision
+# (CLAUDE.md hard rules + design.md cost stance). Revisit in Phase 2.
+
+skip-check:
+  - CKV_AWS_18    # S3 access logging — Phase 1 minimal posture; revisit if Phase 2 audit posture requires it
+  - CKV_AWS_119   # DynamoDB CMK — Phase 1 uses aws/dynamodb default key per CLAUDE.md rule 3; CMK is Phase 2
+  - CKV_AWS_144   # S3 cross-region replication — Phase 1 cost stance; recoverable via bootstrap re-apply; revisit Phase 2
+  - CKV_AWS_145   # S3 CMK encryption — Phase 1 uses aws/s3 default key per CLAUDE.md rule 3; CMK is Phase 2
+  - CKV2_AWS_62   # S3 event notifications — bootstrap is human-driven, not event-driven; revisit Phase 2 if needed
