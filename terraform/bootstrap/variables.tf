@@ -31,14 +31,12 @@ variable "cloudtrail_bucket_name" {
 # DNS & certificate
 # ---------------------------------------------------------------------------
 
-# tflint-ignore: terraform_unused_declarations
 variable "domain_name" {
   type        = string
   default     = "academy.wirfoncloud.com"
   description = "Subject of the ACM certificate created for CloudFront in us-east-1."
 }
 
-# tflint-ignore: terraform_unused_declarations
 variable "acm_subject_alternative_names" {
   type        = list(string)
   default     = []

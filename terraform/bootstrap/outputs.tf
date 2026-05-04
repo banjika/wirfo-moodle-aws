@@ -24,6 +24,6 @@ output "deploy_role_arn" {
 }
 
 output "acm_certificate_arn" {
-  description = "ARN of the ACM certificate in us-east-1 for CloudFront. Filled by T-006."
-  value       = null
+  description = "ARN of the ACM certificate in us-east-1 for CloudFront."
+  value       = aws_acm_certificate_validation.cloudfront.certificate_arn
 }
