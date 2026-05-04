@@ -49,7 +49,6 @@ variable "acm_subject_alternative_names" {
 # GitHub OIDC
 # ---------------------------------------------------------------------------
 
-# tflint-ignore: terraform_unused_declarations
 variable "github_repo" {
   type        = string
   default     = "banjika/wirfo-moodle-aws"

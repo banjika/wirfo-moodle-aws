@@ -19,8 +19,8 @@ output "cloudtrail_arn" {
 }
 
 output "deploy_role_arn" {
-  description = "ARN of the GitHub Actions OIDC deploy role. Filled by T-007."
-  value       = null
+  description = "ARN of the GitHub Actions OIDC deploy role."
+  value       = aws_iam_role.deploy.arn
 }
 
 output "acm_certificate_arn" {

@@ -15,3 +15,10 @@ skip-check:
   - CKV_AWS_144   # S3 cross-region replication — Phase 1 cost stance; recoverable via bootstrap re-apply; revisit Phase 2
   - CKV_AWS_145   # S3 CMK encryption — Phase 1 uses aws/s3 default key per CLAUDE.md rule 3; CMK is Phase 2
   - CKV2_AWS_62   # S3 event notifications — bootstrap is human-driven, not event-driven; revisit Phase 2 if needed
+  - CKV_AWS_60    # IAM wildcard actions — deploy role uses service-wide CRUD (e.g. ec2:*, rds:*); Phase 2 tightens per design.md §5 note 4
+  - CKV_AWS_62    # IAM wildcard resources — deploy role uses Resource=* for unresourceable APIs; Phase 2 tightens per design.md §5 note 4
+  - CKV2_AWS_40   # IAM full admin — iam:* is tag-scoped (aws:ResourceTag/Project=moodle-academy); Phase 2 tightens per design.md §5 note 4
+  - CKV_AWS_287   # IAM credential exposure — secretsmanager:* and ssm:* are already moodle/*-scoped; kms:Decrypt on aws/* managed keys per CLAUDE.md rule 3; revisit Phase 2 with specific action enumeration
+  - CKV_AWS_289   # IAM permissions-management without constraints — Phase 1 service-wide CRUD on deploy role per design.md §5 note 4
+  - CKV_AWS_290   # IAM write access without constraints — Phase 1 service-wide CRUD on deploy role per design.md §5 note 4
+  - CKV_AWS_355   # IAM Resource=* for restrictable actions — Phase 1 simplification per design.md §5 note 4; Phase 2 tightens scoping
