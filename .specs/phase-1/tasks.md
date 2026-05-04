@@ -80,6 +80,7 @@ Stage goal: produce a runnable `terraform/bootstrap/` config that, when applied 
     - `aws_s3_bucket_versioning`, `aws_s3_bucket_server_side_encryption_configuration` (SSE-S3 / `aws/s3` — **not** a CMK), `aws_s3_bucket_public_access_block` (all four = `true`), `aws_s3_bucket_ownership_controls` (`BucketOwnerEnforced`), `aws_s3_bucket_lifecycle_configuration` (90-day noncurrent expiration).
     - `aws_dynamodb_table "tflock"` (`name = "wirfo-moodle-tflock"`, PK `LockID` string, `billing_mode = "PAY_PER_REQUEST"`, `point_in_time_recovery { enabled = true }`).
   - Wire `state_bucket_name` and `lock_table_name` outputs in `outputs.tf`.
+  - `terraform/bootstrap/.checkov.yaml`: config-level skip list for five Phase 1 design decisions (inline #checkov:skip not honoured by checkov 3.2.x on Windows; inline annotations retained as intent documentation).
 - **Acceptance criteria:**
   - `terraform -chdir=terraform/bootstrap plan` shows exactly: 1 S3 bucket + its 5 sub-resources, 1 DynamoDB table.
   - `tfsec` rules `aws-s3-enable-versioning`, `aws-s3-enable-bucket-encryption`, `aws-s3-block-public-acls`, `aws-s3-block-public-policy` all pass.

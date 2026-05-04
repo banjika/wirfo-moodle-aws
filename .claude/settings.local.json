@@ -12,7 +12,8 @@
       "Bash(tflint --chdir=terraform/environments/pilot)",
       "Bash(terraform init *)",
       "Bash(tflint --recursive terraform/bootstrap)",
-      "Bash(tflint --chdir=terraform/bootstrap)"
+      "Bash(tflint --chdir=terraform/bootstrap)",
+      "Bash(checkov --directory terraform/bootstrap --framework terraform --quiet)"
     ]
   }
 }

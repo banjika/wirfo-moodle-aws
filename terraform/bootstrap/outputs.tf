@@ -1,11 +1,11 @@
 output "state_bucket_name" {
-  description = "Name of the S3 bucket holding remote Terraform state. Filled by T-004."
-  value       = null
+  description = "Name of the S3 bucket holding remote Terraform state."
+  value       = aws_s3_bucket.tfstate.id
 }
 
 output "lock_table_name" {
-  description = "Name of the DynamoDB table used for state locking. Filled by T-004."
-  value       = null
+  description = "DynamoDB table name for state locking."
+  value       = aws_dynamodb_table.tflock.name
 }
 
 output "cloudtrail_bucket_name" {
