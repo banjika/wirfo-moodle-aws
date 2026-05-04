@@ -9,13 +9,13 @@ output "lock_table_name" {
 }
 
 output "cloudtrail_bucket_name" {
-  description = "Name of the S3 bucket receiving CloudTrail logs. Filled by T-005."
-  value       = null
+  description = "Name of the S3 bucket receiving CloudTrail logs."
+  value       = aws_s3_bucket.cloudtrail.id
 }
 
 output "cloudtrail_arn" {
-  description = "ARN of the CloudTrail trail. Filled by T-005."
-  value       = null
+  description = "ARN of the CloudTrail trail."
+  value       = aws_cloudtrail.moodle_mgmt.arn
 }
 
 output "deploy_role_arn" {
