@@ -22,3 +22,6 @@ skip-check:
   - CKV_AWS_289   # IAM permissions-management without constraints — Phase 1 service-wide CRUD on deploy role per design.md §5 note 4
   - CKV_AWS_290   # IAM write access without constraints — Phase 1 service-wide CRUD on deploy role per design.md §5 note 4
   - CKV_AWS_355   # IAM Resource=* for restrictable actions — Phase 1 simplification per design.md §5 note 4; Phase 2 tightens scoping
+  - CKV_AWS_35    # CloudTrail trail at-rest encryption requires CMK; per CLAUDE.md rule 3 no CMKs in Phase 1; S3 destination bucket is SSE-S3 encrypted; revisit Phase 2.
+  - CKV2_AWS_10   # CloudWatch Logs integration intentionally not configured in Phase 1; logs go to S3 with object-lock for tamper resistance per design.md §6.1; revisit Phase 2.
+  - CKV_AWS_252   # SNS notifications on the trail itself not required in Phase 1; CloudTrail is for tamper-resistant historical evidence, not real-time alerting. Real-time threat detection is GuardDuty's job (T-025); per-log-file SNS notifications would be high-volume noise. Revisit Phase 2 if needed.
