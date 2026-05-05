@@ -1,4 +1,4 @@
-﻿terraform {
+terraform {
   backend "s3" {
     bucket         = "wirfo-moodle-tfstate-288761747885"
     key            = "pilot/terraform.tfstate"

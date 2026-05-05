@@ -6,5 +6,6 @@
 # are retained as human-readable intent documentation.
 
 skip-check:
-  - CKV2_AWS_11  # VPC flow logging — added in T-010; this suppression is removed in T-010
   - CKV_AWS_130  # Subnet public IP auto-assign — public subnets explicitly assign public IPs per CLAUDE.md hard rule #1 (no NAT Gateway); compute module places EC2 only in public subnets (T-018)
+  - CKV_AWS_158  # CloudWatch log group CMK — no CMK in Phase 1 per CLAUDE.md hard rule #3; uses aws/logs default key. Phase 2 introduces CMKs for payment-data isolation only.
+  - CKV_AWS_338  # Flow log retention 14 days; deliberate Phase 1 cost decision. CloudTrail (90-day object-lock COMPLIANCE) covers audit needs. Phase 2 may revisit.
