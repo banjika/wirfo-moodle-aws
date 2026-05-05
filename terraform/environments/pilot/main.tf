@@ -9,3 +9,11 @@ module "network" {
   private_subnet_cidrs        = var.private_subnet_cidrs
   vpc_flow_log_retention_days = var.vpc_flow_log_retention_days
 }
+
+module "security" {
+  source = "../../modules/security"
+
+  project_name = var.project_name
+  environment  = var.environment
+  vpc_id       = module.network.vpc_id
+}
