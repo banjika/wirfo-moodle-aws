@@ -28,8 +28,10 @@ tfplan.*
 .terraformrc
 terraform.rc
 
-# Lock file: keep .terraform.lock.hcl committed (it pins providers).
-# Do NOT add it here.
+# Lock file (.terraform.lock.hcl) pins provider versions.
+# Commit it in ROOT configurations (terraform/bootstrap/, terraform/environments/*/)
+# but NOT in modules — modules inherit provider pins from the calling root.
+terraform/modules/**/.terraform.lock.hcl
 
 # ---- IDE / editor ----
 .vscode/
