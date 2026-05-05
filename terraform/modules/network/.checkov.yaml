@@ -1,0 +1,10 @@
+---
+# Checkov configuration for terraform/modules/network.
+#
+# Inline #checkov:skip annotations are not honoured by checkov 3.2.x on Windows.
+# This file is the operational suppression mechanism; inline annotations in main.tf
+# are retained as human-readable intent documentation.
+
+skip-check:
+  - CKV2_AWS_11  # VPC flow logging — added in T-010; this suppression is removed in T-010
+  - CKV_AWS_130  # Subnet public IP auto-assign — public subnets explicitly assign public IPs per CLAUDE.md hard rule #1 (no NAT Gateway); compute module places EC2 only in public subnets (T-018)
