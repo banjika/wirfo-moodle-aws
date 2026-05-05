@@ -40,3 +40,8 @@ output "eigw_id" {
   description = "ID of the Egress-Only Internet Gateway."
   value       = aws_egress_only_internet_gateway.main.id
 }
+
+output "vpc_flow_logs_role_arn" {
+  description = "ARN of the IAM role used by VPC Flow Logs."
+  value       = aws_iam_role.vpc_flow_logs.arn
+}

@@ -1,0 +1,16 @@
+---
+# Workload-root checkov suppressions for the pilot environment.
+#
+# Mirrors module-level .checkov.yaml suppressions so checkov's
+# transitive scan from the workload root applies the same skips as
+# module-only scans. When adding a new module, add the same suppressions
+# here as in the module's own .checkov.yaml.
+#
+# Inline #checkov:skip annotations are not honoured by checkov 3.2.x
+# on Windows (established in T-004); the .checkov.yaml is the
+# operational mechanism.
+
+skip-check:
+  - CKV_AWS_130   # modules/network — public subnets auto-assign public IPs per CLAUDE.md hard rule #1 (no NAT). Permanent Phase 1 stance.
+  - CKV_AWS_158   # modules/network — CloudWatch Log Group uses aws/logs (no CMK) per CLAUDE.md hard rule #3. Permanent Phase 1 stance.
+  - CKV_AWS_338   # modules/network — Flow log retention 14 days; deliberate Phase 1 cost decision. CloudTrail (90-day object-lock COMPLIANCE) covers audit needs. Phase 2 may revisit.

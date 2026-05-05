@@ -24,9 +24,6 @@ locals {
   )
 }
 
-# Flow logs are added in T-010; this finding is expected for the duration of T-009
-# only and the ignore annotation is removed in T-010.
-#tfsec:ignore:aws-ec2-require-vpc-flow-logs-for-all-vpcs
 resource "aws_vpc" "main" {
   cidr_block                       = var.vpc_cidr
   assign_generated_ipv6_cidr_block = true
