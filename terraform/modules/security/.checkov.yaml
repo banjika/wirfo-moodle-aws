@@ -1,0 +1,9 @@
+---
+# Module-level checkov suppressions for modules/security.
+#
+# Inline #checkov:skip annotations are not honoured by checkov 3.2.x
+# on Windows; the .checkov.yaml is the operational mechanism.
+
+skip-check:
+  - CKV2_AWS_5   # modules/security — SGs are declared here; attached to resources in T-014 (RDS), T-015 (cache), T-016 (EFS), T-018 (EC2). Permanent Phase 1 stance.
+  - CKV_AWS_260  # web_sg port 80 ingress uses CloudFront managed prefix list (data.aws_ec2_managed_prefix_list.cloudfront_origin), not 0.0.0.0/0. Checkov pattern doesn't inspect prefix_list_id source on aws_vpc_security_group_ingress_rule. CLAUDE.md hard rule #7. Permanent.
