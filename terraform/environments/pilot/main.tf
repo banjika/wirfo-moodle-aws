@@ -33,3 +33,14 @@ module "data" {
   db_master_username          = var.db_master_username
   db_master_password          = module.security.db_master_password
 }
+
+module "cache" {
+  source = "../../modules/cache"
+
+  project_name         = var.project_name
+  environment          = var.environment
+  cache_subnet_ids     = module.network.private_subnet_ids
+  cache_sg_id          = module.security.cache_sg_id
+  cache_node_type      = var.cache_node_type
+  cache_engine_version = var.cache_engine_version
+}
