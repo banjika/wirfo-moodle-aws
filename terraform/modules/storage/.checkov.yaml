@@ -1,0 +1,8 @@
+---
+# Storage module checkov suppressions.
+#
+# Inline #checkov:skip annotations are not honoured by checkov 3.2.x on Windows
+# (established in T-004); this file is the operational suppression mechanism.
+
+skip-check:
+  - CKV_AWS_184   # EFS file system uses aws/elasticfilesystem default key; no CMK in Phase 1 per CLAUDE.md hard rule #3. CMK introduced in Phase 2 for payment data isolation.
