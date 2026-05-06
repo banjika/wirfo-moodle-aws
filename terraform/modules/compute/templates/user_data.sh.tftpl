@@ -1,0 +1,195 @@
+#!/bin/bash
+exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
+set -euxo pipefail
+
+# ---------------------------------------------------------------------------
+# Step 1 — Wait for cloud-init's apt-get lock, then update
+# ---------------------------------------------------------------------------
+while ! apt-get update; do sleep 5; done
+
+# ---------------------------------------------------------------------------
+# Step 2 — Install packages
+# ---------------------------------------------------------------------------
+apt-get install -y \
+  apache2 \
+  php8.1 libapache2-mod-php8.1 \
+  php8.1-pgsql php8.1-redis php8.1-xml php8.1-curl \
+  php8.1-zip php8.1-gd php8.1-intl php8.1-mbstring \
+  php8.1-soap php8.1-cli \
+  postgresql-client \
+  redis-tools \
+  fail2ban \
+  unattended-upgrades \
+  awscli \
+  amazon-cloudwatch-agent \
+  nfs-common \
+  stunnel4 \
+  amazon-efs-utils \
+  jq
+
+# ---------------------------------------------------------------------------
+# Step 3 — Enable fail2ban with default Apache jails
+# ---------------------------------------------------------------------------
+systemctl enable fail2ban
+systemctl start fail2ban
+
+# ---------------------------------------------------------------------------
+# Step 4 — Mount EFS at /var/moodledata over TLS
+# ---------------------------------------------------------------------------
+mkdir -p /var/moodledata
+echo "${efs_id}.efs.${aws_region}.amazonaws.com:/ /var/moodledata efs _netdev,tls,iam 0 0" >> /etc/fstab
+mount -a -t efs
+chown -R www-data:www-data /var/moodledata
+chmod 770 /var/moodledata
+
+# ---------------------------------------------------------------------------
+# Step 5 — Read secrets from Secrets Manager via instance profile
+# ---------------------------------------------------------------------------
+DB_SECRET=$(aws secretsmanager get-secret-value \
+  --region ${aws_region} \
+  --secret-id "${db_secret_arn}" \
+  --query SecretString \
+  --output text)
+DB_USER=$(echo "$DB_SECRET" | jq -r .username)
+DB_PASS=$(echo "$DB_SECRET" | jq -r .password)
+
+ADMIN_SECRET=$(aws secretsmanager get-secret-value \
+  --region ${aws_region} \
+  --secret-id "${admin_secret_arn}" \
+  --query SecretString \
+  --output text)
+ADMIN_USER=$(echo "$ADMIN_SECRET" | jq -r .username)
+ADMIN_PASS=$(echo "$ADMIN_SECRET" | jq -r .password)
+
+# ---------------------------------------------------------------------------
+# Step 6 — Download Moodle 4.3 LTS
+# ---------------------------------------------------------------------------
+cd /var/www
+wget -q https://download.moodle.org/download.php/direct/stable403/moodle-latest-403.tgz
+tar -xzf moodle-latest-403.tgz
+rm moodle-latest-403.tgz
+chown -R www-data:www-data /var/www/moodle
+
+# ---------------------------------------------------------------------------
+# Step 7 — Configure Apache VirtualHost
+# Terraform renders ${domain_name} before this script runs.
+# <<'APACHECONF' prevents bash from re-interpreting already-rendered values.
+# UseCanonicalName On is required for Moodle wwwroot consistency (design.md §2.3):
+# it ensures Apache builds absolute URLs from the ServerName, not the EC2 hostname.
+# ---------------------------------------------------------------------------
+cat > /etc/apache2/sites-available/moodle.conf <<'APACHECONF'
+<VirtualHost *:80>
+    ServerName ${domain_name}
+    UseCanonicalName On
+    DocumentRoot /var/www/moodle
+
+    <Directory /var/www/moodle>
+        Options FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog /var/log/apache2/moodle-error.log
+    CustomLog /var/log/apache2/moodle-access.log combined
+</VirtualHost>
+APACHECONF
+
+a2dissite 000-default.conf
+a2ensite moodle.conf
+a2enmod rewrite headers
+systemctl restart apache2
+
+# ---------------------------------------------------------------------------
+# Step 8 — Run Moodle CLI installer
+# Create the database first; Moodle's installer does not create it.
+# ---------------------------------------------------------------------------
+PGPASSWORD="$DB_PASS" createdb \
+  -h "${db_endpoint}" \
+  -p "${db_port}" \
+  -U "$DB_USER" \
+  moodle || echo "DB may already exist; continuing"
+
+sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/install.php \
+  --non-interactive \
+  --agree-license \
+  --wwwroot="https://${domain_name}" \
+  --dataroot=/var/moodledata \
+  --dbtype=pgsql \
+  --dbhost="${db_endpoint}" \
+  --dbport="${db_port}" \
+  --dbname=moodle \
+  --dbuser="$DB_USER" \
+  --dbpass="$DB_PASS" \
+  --fullname="Moodle Academy" \
+  --shortname="academy" \
+  --adminuser=admin \
+  --adminpass="$ADMIN_PASS" \
+  --adminemail="${moodle_admin_email}"
+
+# ---------------------------------------------------------------------------
+# Step 9 — Append CloudFront-aware and Valkey session settings to config.php
+# Terraform renders cache_endpoint, cache_port, and cache_auth_token before this script runs.
+# <<'PHPEOF' prevents bash from expanding $CFG as a shell variable.
+# $CFG is a PHP variable; it must appear literally in config.php.
+# ---------------------------------------------------------------------------
+cat >> /var/www/moodle/config.php <<'PHPEOF'
+
+// CloudFront / TLS-upstream settings
+$CFG->cookiesecure = true;
+$CFG->sslproxy = true;
+$CFG->reverseproxy = true;
+
+// Valkey session/cache configuration
+$CFG->session_handler_class = '\core\session\redis';
+$CFG->session_redis_host = '${cache_endpoint}';
+$CFG->session_redis_port = ${cache_port};
+$CFG->session_redis_auth = '${cache_auth_token}';
+$CFG->session_redis_encrypt = true;
+PHPEOF
+
+# ---------------------------------------------------------------------------
+# Step 10 — Configure CloudWatch Agent
+# Placeholder config; T-022 will load the full config from SSM Parameter Store
+# per requirements §8.3 / design.md §2.8.
+# {instance_id} is a CloudWatch Agent placeholder resolved at agent startup.
+# ---------------------------------------------------------------------------
+mkdir -p /opt/aws/amazon-cloudwatch-agent/etc
+cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json <<'CWEOF'
+{
+  "agent": { "run_as_user": "root" },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/apache2/moodle-error.log",
+            "log_group_name": "/moodle/web",
+            "log_stream_name": "{instance_id}/error"
+          },
+          {
+            "file_path": "/var/log/apache2/moodle-access.log",
+            "log_group_name": "/moodle/web",
+            "log_stream_name": "{instance_id}/access"
+          },
+          {
+            "file_path": "/var/log/user-data.log",
+            "log_group_name": "/moodle/system",
+            "log_stream_name": "{instance_id}/user-data"
+          }
+        ]
+      }
+    }
+  }
+}
+CWEOF
+
+systemctl enable amazon-cloudwatch-agent
+systemctl start amazon-cloudwatch-agent
+
+# ---------------------------------------------------------------------------
+# Step 11 — Touch success marker
+# After first boot: `aws ssm start-session --target <instance-id>`
+# then `stat /var/log/user-data.success` to confirm install completed.
+# If missing, read /var/log/user-data.log to see where it died.
+# ---------------------------------------------------------------------------
+touch /var/log/user-data.success
