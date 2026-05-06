@@ -6,3 +6,5 @@
 
 skip-check:
   - CKV_AWS_184   # EFS file system uses aws/elasticfilesystem default key; no CMK in Phase 1 per CLAUDE.md hard rule #3. CMK introduced in Phase 2 for payment data isolation.
+  - CKV_AWS_166   # Backup vault uses aws/backup AWS-managed key; no CMK in Phase 1 per CLAUDE.md hard rule #3 and design.md §10 row 3. CMK introduced in Phase 2 alongside payment data isolation.
+  - CKV2_AWS_18   # EFS IS covered by T-017 tag-based aws_backup_selection (BackupPolicy=daily-7d); checkov static analysis cannot resolve cross-resource tag-based selection references.

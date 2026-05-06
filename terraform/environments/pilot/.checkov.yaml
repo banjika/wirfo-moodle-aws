@@ -24,3 +24,6 @@ skip-check:
   - CKV_AWS_354   # modules/data — Performance Insights uses aws/rds default key; no CMK in Phase 1 per CLAUDE.md hard rule #3. CMK introduced in Phase 2.
   - CKV_AWS_191   # modules/cache — ElastiCache replication group uses aws/elasticache default key; no CMK in Phase 1 per CLAUDE.md hard rule #3. CMK deferred to Phase 2.
   - CKV2_AWS_50   # modules/cache — Multi-AZ Automatic Failover disabled; Phase 1 single-AZ per CLAUDE.md hard rule #2. Phase 3 enables HA via cache_cluster_mode toggle.
+  - CKV_AWS_184   # modules/storage — EFS uses aws/elasticfilesystem default key; no CMK in Phase 1 per CLAUDE.md hard rule #3. CMK introduced in Phase 2 for payment data isolation.
+  - CKV_AWS_166   # modules/storage — Backup vault uses aws/backup AWS-managed key; no CMK in Phase 1 per CLAUDE.md hard rule #3 and design.md §10 row 3. CMK introduced in Phase 2 alongside payment data isolation.
+  - CKV2_AWS_18   # modules/storage — EFS IS covered by T-017 tag-based aws_backup_selection (BackupPolicy=daily-7d); checkov static analysis cannot resolve cross-resource tag-based selection references.

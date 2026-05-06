@@ -44,3 +44,20 @@ module "cache" {
   cache_node_type      = var.cache_node_type
   cache_engine_version = var.cache_engine_version
 }
+
+module "storage" {
+  source = "../../modules/storage"
+
+  project_name  = var.project_name
+  environment   = var.environment
+  efs_subnet_id = module.network.private_subnet_ids[0]
+  # Phase 1 single-AZ choice expressed via list indexing.
+  # private_subnet_ids = [AZ-a subnet, AZ-b subnet] from
+  # modules/network. Index 0 = AZ-a (active AZ in Phase 1).
+  # Phase 3 may add a second mount target wired to [1].
+  efs_sg_id                 = module.security.efs_sg_id
+  efs_throughput_mode       = var.efs_throughput_mode
+  efs_backup_retention_days = var.efs_backup_retention_days
+  backup_role_arn           = module.security.backup_role_arn
+  # First consumer of the aws_backup role created in T-012.
+}
