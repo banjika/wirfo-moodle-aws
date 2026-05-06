@@ -18,3 +18,7 @@ skip-check:
   - CKV_AWS_260   # modules/security — web_sg port 80 ingress uses CloudFront managed prefix list (data.aws_ec2_managed_prefix_list.cloudfront_origin), not 0.0.0.0/0. Checkov pattern doesn't inspect prefix_list_id source on aws_vpc_security_group_ingress_rule. CLAUDE.md hard rule #7. Permanent.
   - CKV_AWS_149   # modules/security — Secrets Manager no CMK in Phase 1 per CLAUDE.md hard rule #3; uses aws/secretsmanager default key. CMK deferred to Phase 2 for payment data isolation.
   - CKV2_AWS_57   # modules/security — Secrets Manager auto-rotation deferred to Phase 2 per requirements §2.1; requires VPC-attached Lambda + Interface VPC Endpoint, contradicting Phase 1 no-NAT cost stance.
+  - CKV_AWS_157   # modules/data — Phase 1 single-AZ per CLAUDE.md hard rule #2; var.rds_multi_az flips this in Phase 3.
+  - CKV_AWS_118   # modules/data — Enhanced monitoring deferred to Phase 2; requires monitoring.rds.amazonaws.com IAM role + monitoring_interval > 0. Performance Insights covers Phase 1.
+  - CKV_AWS_161   # modules/data — IAM DB auth deferred to Phase 3 per design.md §2.4; db_resource_id exported for eventual modules/compute IAM policy.
+  - CKV_AWS_354   # modules/data — Performance Insights uses aws/rds default key; no CMK in Phase 1 per CLAUDE.md hard rule #3. CMK introduced in Phase 2.

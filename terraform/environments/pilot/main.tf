@@ -17,3 +17,19 @@ module "security" {
   environment  = var.environment
   vpc_id       = module.network.vpc_id
 }
+
+module "data" {
+  source = "../../modules/data"
+
+  project_name                = var.project_name
+  environment                 = var.environment
+  db_subnet_ids               = module.network.private_subnet_ids
+  db_sg_id                    = module.security.db_sg_id
+  db_instance_class           = var.db_instance_class
+  db_allocated_storage_gb     = var.db_allocated_storage_gb
+  db_max_allocated_storage_gb = var.db_max_allocated_storage_gb
+  db_engine_version           = var.db_engine_version
+  db_backup_retention_days    = var.db_backup_retention_days
+  db_master_username          = var.db_master_username
+  db_master_password          = module.security.db_master_password
+}
