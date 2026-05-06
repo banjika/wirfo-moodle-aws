@@ -37,3 +37,23 @@ variable "efs_throughput_mode" {
     error_message = "efs_throughput_mode must be one of: bursting, provisioned, elastic."
   }
 }
+
+variable "efs_backup_retention_days" {
+  type        = number
+  description = "Days to retain EFS backups in the AWS Backup vault. Phase 1 default is 7 (per requirements §2.1 RPO 24h with 7-day retention window for headroom)."
+
+  validation {
+    condition     = var.efs_backup_retention_days >= 1 && var.efs_backup_retention_days <= 35
+    error_message = "efs_backup_retention_days must be between 1 and 35 days."
+  }
+}
+
+variable "backup_role_arn" {
+  type        = string
+  description = "ARN of the IAM role assumed by AWS Backup. Created in modules/security (T-012); first consumer is T-017's aws_backup_selection."
+
+  validation {
+    condition     = startswith(var.backup_role_arn, "arn:aws:iam::")
+    error_message = "backup_role_arn must be a valid IAM role ARN."
+  }
+}
