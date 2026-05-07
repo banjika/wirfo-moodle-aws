@@ -102,3 +102,22 @@ module "compute" {
   # From module.storage
   efs_id = module.storage.efs_id
 }
+
+module "dns_cdn" {
+  source = "../../modules/dns_cdn"
+
+  # dns_cdn is the first module that requires an explicit providers
+  # block. The us_east_1 alias is declared in versions.tf; the
+  # module's configuration_aliases = [aws.us_east_1] requires this
+  # explicit handoff — Terraform errors at plan time without it.
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+
+  project_name       = var.project_name
+  environment        = var.environment
+  domain_name        = var.domain_name
+  origin_domain_name = module.compute.eip_public_dns
+  dmarc_rua_address  = var.dmarc_rua_address
+}

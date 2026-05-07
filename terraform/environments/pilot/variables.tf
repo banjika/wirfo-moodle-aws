@@ -93,9 +93,13 @@ variable "domain_name" {
 }
 
 variable "dmarc_rua_address" {
+  description = "RUA mailbox in the DMARC TXT record published by modules/dns_cdn. Receives aggregate authentication failure reports as machine-readable XML. No default — operator supplies a real, working email address in terraform.tfvars. Phase 2 may set up a domain-local mailbox via SES inbound + parser (e.g., dmarcian)."
   type        = string
-  default     = "dmarc@wirfoncloud.com"
-  description = "RUA mailbox address in the DMARC TXT record published by modules/dns_cdn."
+
+  validation {
+    condition     = can(regex("^[^@]+@[^@]+\\.[^@]+$", var.dmarc_rua_address))
+    error_message = "Must be a valid email address."
+  }
 }
 
 # ---------------------------------------------------------------------------
