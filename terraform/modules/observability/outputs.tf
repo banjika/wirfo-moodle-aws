@@ -1,3 +1,8 @@
+output "sns_topic_arn" {
+  description = "ARN of the alarm SNS topic. Used by Phase 2 to add PagerDuty/OpsGenie subscriptions without recreating the topic."
+  value       = aws_sns_topic.alarms.arn
+}
+
 output "app_log_group_name" {
   description = "/moodle/app log group name. Consumed by T-018 user-data CW Agent config and by Phase 2 application code pushing custom log events."
   value       = aws_cloudwatch_log_group.app.name
