@@ -134,3 +134,70 @@ Any failure → fix before proceeding. If a tool is not installed, say so and st
 - `.specs/phase-1/requirements.md` — already approved, treat as immutable.
 - `.git/`, `.terraform/`, `*.tfstate`, `*.tfstate.backup` — Terraform internals.
 - Anything under `docs/runbooks/` unless the user explicitly asks.
+
+## Operator environment
+
+This project's operator (Banjika) develops on Windows with Claude Code 
+using the bash wrapper. The following constraints apply to ALL 
+tool-call commands:
+
+### Shell discipline
+- The wrapper runs **bash on Windows** (Git Bash). PowerShell 
+  cmdlets are NOT available.
+- Use bash-only commands: `ls`, `find`, `grep`, `awk`, `sed`, `wc`, 
+  `head`, `tail`, `cat`, `cut`, `sort`, `uniq`, `tr`, `xargs`.
+- Forbidden: `Get-ChildItem`, `Where-Object`, `Select-Object`, 
+  `Measure-Object`, `ForEach-Object`, `Sort-Object`, `Out-File`, 
+  any other PowerShell cmdlet.
+- The operator runs PowerShell verifications themselves outside 
+  Claude when needed.
+
+### Path discipline
+- `terraform -chdir=` uses **forward slashes** and **relative paths** 
+  from the repo root.
+- Correct: `terraform -chdir=terraform/modules/network init`
+- Incorrect: `terraform -chdir=C:\full\windows\path\modules\network init`
+- Bash strips backslashes, mangling the path.
+
+### Single-command discipline  
+- Each tool call should be a single command.
+- No `cmd1 ; cmd2`, no `cmd1 && cmd2` chaining for unrelated 
+  commands.
+- For multi-step verification, run separate tool calls.
+
+### Module isolation
+- Each Terraform module's `terraform init` is independent.
+- NEVER use `-plugin-dir` or attempt to share `.terraform/` provider 
+  caches between modules.
+- Modules are isolated by design. The 30-second download is 
+  insurance against cache fragility.
+
+### Investigation discipline
+- Prefer read-only commands (`cat`, `grep`, `ls`) over state-mutating 
+  commands (`mv`, `rm`, modifying configs, setup-then-test-then-
+  teardown patterns).
+- If verification requires moving or modifying files, ask the 
+  operator first.
+
+
+## Suppression discipline
+
+Every scanner suppression is DUAL-RECORDED:
+1. Entry in module-level `.checkov.yaml` (operational — what the 
+   scanner enforces)
+2. Inline `#checkov:skip=<rule_id>: <rationale>` on the resource 
+   (documentation — anchored to the resource it's about)
+
+Same pattern for tfsec: entry in shared config OR inline 
+`#tfsec:ignore:<rule_id>` directly above the resource.
+
+The dual-recording ensures decisions are visible to anyone reading 
+the resource code, not just to the scanner config. Operational 
+suppression alone makes the decision invisible. Inline alone 
+doesn't survive scanner version updates as reliably.
+
+Comment-order (immediately above the resource keyword, no blank 
+lines):
+1. Regular # comments first
+2. #checkov:skip lines next
+3. #tfsec:ignore as the LAST comment line
