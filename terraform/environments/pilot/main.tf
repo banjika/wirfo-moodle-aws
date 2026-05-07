@@ -61,3 +61,44 @@ module "storage" {
   backup_role_arn           = module.security.backup_role_arn
   # First consumer of the aws_backup role created in T-012.
 }
+
+module "compute" {
+  source = "../../modules/compute"
+
+  # Identity
+  project_name = var.project_name
+  environment  = var.environment
+
+  # From workload root vars
+  instance_type      = var.instance_type
+  root_volume_gb     = var.root_volume_gb
+  domain_name        = var.domain_name
+  moodle_admin_email = var.moodle_admin_email
+  aws_region         = var.aws_region
+
+  # From module.network
+  public_subnet_id = module.network.public_subnet_ids[0]
+  # Phase 1 single-AZ — index 0 = AZ-a (active AZ). Phase 3 may
+  # add a second instance wired to public_subnet_ids[1] under an
+  # ASG/ALB topology.
+
+  # From module.security
+  web_sg_id                 = module.security.web_sg_id
+  ec2_instance_profile_name = module.security.ec2_instance_profile_name
+  db_secret_arn             = module.security.db_secret_arn
+  admin_secret_arn          = module.security.admin_secret_arn
+
+  # From module.data
+  db_endpoint = module.data.db_endpoint
+  db_port     = module.data.db_port
+
+  # From module.cache
+  cache_endpoint   = module.cache.cache_endpoint
+  cache_port       = module.cache.cache_port
+  cache_auth_token = module.cache.cache_auth_token
+  # First consumer of cache_auth_token (created in T-015).
+  # Sensitive value flows through to user-data via templatefile.
+
+  # From module.storage
+  efs_id = module.storage.efs_id
+}
