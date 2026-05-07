@@ -29,3 +29,10 @@ skip-check:
   - CKV2_AWS_18   # modules/storage — EFS IS covered by T-017 tag-based aws_backup_selection (BackupPolicy=daily-7d); checkov static analysis cannot resolve cross-resource tag-based selection references.
   - CKV_AWS_88    # modules/compute — EC2 has public IP per CLAUDE.md hard rule #1 (no NAT). Web SG ingress restricted to CloudFront prefix list (T-011); admin via SSM only (hard rule #6). Phase 3 moves EC2 behind ALB into private subnets.
   - CKV_AWS_126   # modules/compute — EC2 detailed monitoring disabled; Phase 1 cost stance per requirements §6. CloudWatch Agent (T-022) provides 1-minute app-level metrics.
+  - CKV_AWS_68    # modules/dns_cdn — CloudFront WAF deferred to Phase 2 alongside payment gateway integration per design.md §10.1.
+  - CKV_AWS_86    # modules/dns_cdn — CloudFront access logging omitted; Phase 1 cost stance per design.md §2.7. Phase 2 may add S3 logging when WAF analytics need it.
+  - CKV_AWS_305   # modules/dns_cdn — CloudFront default_root_object intentionally empty; Moodle handles URL routing. Setting "index.php" breaks /login/index.php, /course/view.php, etc.
+  - CKV_AWS_310   # modules/dns_cdn — CloudFront origin failover not applicable; single EC2 origin in Phase 1. Phase 3 introduces ALB and HA per design.md §10.1.
+  - CKV_AWS_374   # modules/dns_cdn — CloudFront geo restriction none; no geo-blocking in Phase 1 per CLAUDE.md hard rule #5. Phase 2 BNR REG 89/2025 may add pricing variation, not geo-blocking.
+  - CKV2_AWS_32   # modules/dns_cdn — CloudFront response headers policy not in Phase 1 scope. Phase 2 may add HSTS/CSP security headers policy for production hardening.
+  - CKV2_AWS_47   # modules/dns_cdn — CloudFront WAFv2 Log4j AMR requires WAF attachment; deferred to Phase 2 with CKV_AWS_68.

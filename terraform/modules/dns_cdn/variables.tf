@@ -22,3 +22,13 @@ variable "origin_domain_name" {
     error_message = "origin_domain_name must not be empty."
   }
 }
+
+variable "dmarc_rua_address" {
+  description = "RUA mailbox in the DMARC TXT record. Receives aggregate authentication failure reports."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[^@]+@[^@]+\\.[^@]+$", var.dmarc_rua_address))
+    error_message = "Must be a valid email address."
+  }
+}
