@@ -23,6 +23,11 @@ output "canary_log_group_name" {
   value       = aws_cloudwatch_log_group.canary.name
 }
 
+output "canary_name" {
+  description = "Name of the Synthetics canary. Wired via T-025 to the canary_failed alarm dimension (var.canary_name in alarms.tf)."
+  value       = aws_synthetics_canary.moodle_login.name
+}
+
 output "cloudwatch_agent_config_parameter_name" {
   description = "SSM parameter holding the CW Agent JSON config. Consumed by T-018's user-data via 'aws ssm get-parameter'."
   value       = aws_ssm_parameter.cloudwatch_agent_config.name
