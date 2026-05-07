@@ -1,0 +1,10 @@
+---
+# Observability module checkov suppressions.
+#
+# Inline #checkov:skip annotations are not honoured by checkov 3.2.x on Windows
+# (established in T-004); this file is the operational suppression mechanism.
+
+skip-check:
+  - CKV_AWS_158   # CloudWatch log group encrypted with CMK — Phase 1 hard rule #3 (no CMKs). All four log groups use AWS-managed aws/logs encryption. Phase 2 may add aws/logs CMK.
+  - CKV_AWS_338   # CloudWatch log group retention < 1 year — 30-day retention is deliberate Phase 1 cost stance per requirements §4 / design.md §3. Extended retention deferred to Phase 2 compliance review.
+  - CKV2_AWS_34   # SSM parameter not encrypted — CW Agent config (type=String) contains no secrets; only metric collection intervals and log file paths. SecureString would require kms:Decrypt on the EC2 instance role for zero security benefit. Phase 2 may add SecureString if sensitive endpoints are added.
