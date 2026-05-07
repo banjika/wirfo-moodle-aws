@@ -34,6 +34,17 @@ variable "canary_name" {
   description = "AWS Synthetics canary name (created in T-024). Pre-wired here so the canary-failed alarm exists before the canary itself. Empty default allows plan-testing before T-024 is built."
 }
 
+variable "domain_name" {
+  type        = string
+  description = "Public-facing FQDN for the Moodle instance (e.g. academy.wirfoncloud.com). Used to build the canary probe URL."
+}
+
+variable "enable_synthetics_canary" {
+  type        = bool
+  default     = true
+  description = "Toggle the Synthetics canary on or off. Set to false to create the canary without starting it (cost control)."
+}
+
 variable "log_retention_days" {
   type        = number
   default     = 30
