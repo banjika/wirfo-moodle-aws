@@ -12,8 +12,8 @@
 
 skip-check:
   - CKV_AWS_130   # modules/network — public subnets auto-assign public IPs per CLAUDE.md hard rule #1 (no NAT). Permanent Phase 1 stance.
-  - CKV_AWS_158   # modules/network — CloudWatch Log Group uses aws/logs (no CMK) per CLAUDE.md hard rule #3. Permanent Phase 1 stance.
-  - CKV_AWS_338   # modules/network — Flow log retention 14 days; deliberate Phase 1 cost decision. CloudTrail (90-day object-lock COMPLIANCE) covers audit needs. Phase 2 may revisit.
+  - CKV_AWS_158   # modules/network + modules/observability — CloudWatch Log Groups use aws/logs (no CMK) per CLAUDE.md hard rule #3. Permanent Phase 1 stance.
+  - CKV_AWS_338   # modules/network + modules/observability — Log group retention < 1 year; deliberate Phase 1 cost decision (14-day flow logs, 30-day app logs). CloudTrail (90-day object-lock COMPLIANCE) covers audit needs. Phase 2 may revisit.
   - CKV2_AWS_5    # modules/security — SGs are declared here; attached to resources in T-014 (RDS), T-015 (cache), T-016 (EFS), T-018 (EC2). Permanent Phase 1 stance.
   - CKV_AWS_260   # modules/security — web_sg port 80 ingress uses CloudFront managed prefix list (data.aws_ec2_managed_prefix_list.cloudfront_origin), not 0.0.0.0/0. Checkov pattern doesn't inspect prefix_list_id source on aws_vpc_security_group_ingress_rule. CLAUDE.md hard rule #7. Permanent.
   - CKV_AWS_149   # modules/security — Secrets Manager no CMK in Phase 1 per CLAUDE.md hard rule #3; uses aws/secretsmanager default key. CMK deferred to Phase 2 for payment data isolation.
@@ -36,3 +36,10 @@ skip-check:
   - CKV_AWS_374   # modules/dns_cdn — CloudFront geo restriction none; no geo-blocking in Phase 1 per CLAUDE.md hard rule #5. Phase 2 BNR REG 89/2025 may add pricing variation, not geo-blocking.
   - CKV2_AWS_32   # modules/dns_cdn — CloudFront response headers policy not in Phase 1 scope. Phase 2 may add HSTS/CSP security headers policy for production hardening.
   - CKV2_AWS_47   # modules/dns_cdn — CloudFront WAFv2 Log4j AMR requires WAF attachment; deferred to Phase 2 with CKV_AWS_68.
+  - CKV2_AWS_34   # modules/observability — SSM parameter /moodle/cloudwatch-agent/config is type=String (no secrets; only metric intervals and log paths). SecureString would require kms:Decrypt on the EC2 instance role for zero security benefit. Phase 2 may add SecureString if sensitive endpoints are added.
+  - CKV_AWS_18    # modules/observability — S3 access logging on canary-artifacts bucket; Phase 1 cost stance. Canary writes are internal and audited via CloudTrail. Access logs only meaningful at production scale.
+  - CKV_AWS_144   # modules/observability — S3 cross-region replication on canary-artifacts bucket; Phase 1 single-region. Canary artifacts are ephemeral (30-day lifecycle expiry); no DR concern.
+  - CKV_AWS_145   # modules/observability — S3 KMS encryption on canary-artifacts bucket; Phase 1 hard rule #3 (no CMKs). Bucket uses SSE-S3 (AES256). Phase 2 may add CMK.
+  - CKV2_AWS_62   # modules/observability — S3 event notifications on canary-artifacts bucket; internal write-only artifact storage. Event notifications add no operational value at Phase 1 scale.
+  - CKV2_AWS_58   # environments/pilot/guardduty.tf — GuardDuty S3 protection uses account default. Enabling explicitly requires aws_guardduty_detector_feature per region (17 extra resources). Phase 2 enables via delegated admin.
+  - CKV2_AWS_3    # environments/pilot/guardduty.tf — Rule requires GuardDuty wired to an AWS Organizations delegated admin account. Phase 1 is a single-account deployment with no AWS Organizations. Org-level GuardDuty is a Phase 2 multi-account concern per design.md §2.8.

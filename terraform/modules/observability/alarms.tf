@@ -183,8 +183,8 @@ resource "aws_cloudwatch_metric_alarm" "cache_evictions" {
 }
 
 # 9: Synthetics canary success rate < 100%.
-# Canary runs every 5 min (created in T-024). Alarm pre-created here so it is
-# wired before the canary exists; stays in INSUFFICIENT_DATA until T-024 deploys.
+# References aws_synthetics_canary.moodle_login directly; both resources live
+# in this module (T-024), so no var.canary_name passthrough is needed.
 resource "aws_cloudwatch_metric_alarm" "canary_failed" {
   alarm_name          = "${var.project_name}-${var.environment}-canary-failed"
   alarm_description   = "Synthetics canary login check failing. Moodle login page may be unreachable."
@@ -198,7 +198,7 @@ resource "aws_cloudwatch_metric_alarm" "canary_failed" {
   treat_missing_data  = "breaching"
 
   dimensions = {
-    CanaryName = var.canary_name
+    CanaryName = aws_synthetics_canary.moodle_login.name
   }
 
   alarm_actions = local.alarm_actions
