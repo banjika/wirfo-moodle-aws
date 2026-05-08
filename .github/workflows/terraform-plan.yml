@@ -25,7 +25,7 @@ jobs:
 
     env:
       AWS_REGION: eu-west-1
-      TF_VERSION: '1.7.5'
+      TF_VERSION: '1.10.5'
       TFLINT_VERSION: '0.50.3'
       TFSEC_VERSION: '1.28.6'
       CHECKOV_VERSION: '3.2.0'
