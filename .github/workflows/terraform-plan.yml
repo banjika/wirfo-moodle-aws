@@ -1,0 +1,166 @@
+name: Terraform Plan
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-*.yml'
+      - '.tflint.hcl'
+      - 'tfsec.yml'
+      - '.checkov.yaml'
+
+permissions:
+  id-token: write       # OIDC token request
+  contents: read        # Checkout
+  pull-requests: write  # Post plan comment
+
+concurrency:
+  group: terraform-plan-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-22.04
+
+    env:
+      AWS_REGION: eu-west-1
+      TF_VERSION: '1.7.5'
+      TFLINT_VERSION: '0.50.3'
+      TFSEC_VERSION: '1.28.6'
+      CHECKOV_VERSION: '3.2.0'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Fail fast before expensive tool downloads if required vars are absent.
+      # Set these under: Settings → Secrets and variables → Actions → Variables
+      # Use RFC 2606 stub values for plan CI (e.g., test@example.com).
+      - name: Preflight — required repo variables
+        run: |
+          missing=()
+          [[ -z "${{ vars.AWS_DEPLOY_ROLE_ARN }}" ]] && missing+=("AWS_DEPLOY_ROLE_ARN")
+          [[ -z "${{ vars.ALARM_EMAIL }}" ]]          && missing+=("ALARM_EMAIL")
+          [[ -z "${{ vars.MOODLE_ADMIN_EMAIL }}" ]]   && missing+=("MOODLE_ADMIN_EMAIL")
+          [[ -z "${{ vars.DMARC_RUA_ADDRESS }}" ]]    && missing+=("DMARC_RUA_ADDRESS")
+          if [[ ${#missing[@]} -gt 0 ]]; then
+            echo "ERROR: Missing required GitHub Actions repo variables:"
+            printf '  - %s\n' "${missing[@]}"
+            printf '\nSet under: Settings → Secrets and variables → Actions → Variables\n'
+            printf 'Use RFC 2606 stub values for plan CI (e.g., test@example.com).\n'
+            exit 1
+          fi
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          # false = raw stdout/stderr; required to capture plan output cleanly
+          terraform_wrapper: false
+
+      - name: Setup tflint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v${{ env.TFLINT_VERSION }}
+
+      # Direct binary install; tfsec-action is all-in-one and can't be separated
+      # from its run, so we install manually to control the quality-gate step.
+      - name: Setup tfsec
+        run: |
+          curl -sLo /tmp/tfsec "https://github.com/aquasecurity/tfsec/releases/download/v${{ env.TFSEC_VERSION }}/tfsec-linux-amd64"
+          chmod +x /tmp/tfsec
+          sudo mv /tmp/tfsec /usr/local/bin/tfsec
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install checkov
+        run: pip install checkov==${{ env.CHECKOV_VERSION }}
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      # ===== QUALITY GATE 1: terraform fmt =====
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
+      # ===== QUALITY GATE 2: tflint =====
+      - name: tflint init
+        run: tflint --init
+
+      - name: tflint
+        run: tflint --recursive
+
+      # ===== QUALITY GATE 3: tfsec =====
+      - name: tfsec
+        run: tfsec . --config-file tfsec.yml --soft-fail=false
+
+      # ===== QUALITY GATE 4: checkov per-subtree =====
+      # Checkov resolves config from CWD, not --directory; per-subtree invocation
+      # ensures the right scope is scanned. See .checkov.yaml §INVOCATION STRATEGY.
+      - name: checkov — bootstrap
+        run: checkov --directory terraform/bootstrap --framework terraform --quiet
+
+      - name: checkov — pilot
+        run: checkov --directory terraform/environments/pilot --framework terraform --quiet
+
+      # ===== QUALITY GATE 5: terraform validate =====
+      - name: Terraform init
+        run: terraform -chdir=terraform/environments/pilot init -input=false
+
+      - name: Terraform validate
+        run: terraform -chdir=terraform/environments/pilot validate
+
+      # ===== QUALITY GATE 6: terraform plan =====
+      # set -o pipefail propagates terraform's exit code through tee; without it
+      # tee's success masks a failed plan.
+      - name: Terraform plan
+        id: plan
+        run: |
+          set -o pipefail
+          terraform -chdir=terraform/environments/pilot plan \
+            -var="alarm_email=${{ vars.ALARM_EMAIL }}" \
+            -var="moodle_admin_email=${{ vars.MOODLE_ADMIN_EMAIL }}" \
+            -var="dmarc_rua_address=${{ vars.DMARC_RUA_ADDRESS }}" \
+            -no-color -input=false -out=tfplan 2>&1 | tee plan.txt
+
+      - name: Format plan for PR comment
+        id: plan_summary
+        run: |
+          {
+            echo 'plan_output<<EOF'
+            head -n 500 plan.txt
+            if [[ $(wc -l < plan.txt) -gt 500 ]]; then
+              echo ''
+              echo '... (truncated — full output in workflow logs)'
+            fi
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post plan to PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: terraform-plan
+          message: |
+            ## Terraform Plan
+
+            <details>
+            <summary>Click to expand plan output</summary>
+
+            ```
+            ${{ steps.plan_summary.outputs.plan_output }}
+            ```
+
+            </details>
+
+            _Commit: `${{ github.event.pull_request.head.sha }}`_
