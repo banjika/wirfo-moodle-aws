@@ -52,6 +52,13 @@ env/
 
 # ---- Node (for any tooling) ----
 node_modules/
+# AWS Synthetics canary requires this nested path structure
+# (script must live at canary/nodejs/node_modules/<handler>.js).
+# Exempt only this specific path; general node_modules/ exclusion
+# remains for everything else.
+!terraform/modules/observability/canary/nodejs/
+!terraform/modules/observability/canary/nodejs/node_modules/
+!terraform/modules/observability/canary/nodejs/node_modules/**
 
 # ---- Secrets / credentials ----
 # Never commit AWS credentials or .env
