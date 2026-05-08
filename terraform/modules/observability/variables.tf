@@ -28,12 +28,6 @@ variable "cache_cluster_id" {
   description = "ElastiCache cluster ID (module.cache.cluster_id). Used as the CacheClusterId dimension on ElastiCache alarms."
 }
 
-variable "canary_name" {
-  type        = string
-  default     = ""
-  description = "AWS Synthetics canary name (created in T-024). Pre-wired here so the canary-failed alarm exists before the canary itself. Empty default allows plan-testing before T-024 is built."
-}
-
 variable "domain_name" {
   type        = string
   description = "Public-facing FQDN for the Moodle instance (e.g. academy.wirfoncloud.com). Used to build the canary probe URL."

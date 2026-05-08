@@ -121,3 +121,19 @@ module "dns_cdn" {
   origin_domain_name = module.compute.eip_public_dns
   dmarc_rua_address  = var.dmarc_rua_address
 }
+
+module "observability" {
+  source = "../../modules/observability"
+
+  project_name             = var.project_name
+  environment              = var.environment
+  alarm_email              = var.alarm_email
+  log_retention_days       = var.log_retention_days
+  domain_name              = var.domain_name
+  enable_synthetics_canary = var.enable_synthetics_canary
+
+  # Cross-module wiring: the three resource IDs used as CloudWatch alarm dimensions.
+  instance_id            = module.compute.instance_id
+  db_instance_identifier = module.data.db_id
+  cache_cluster_id       = module.cache.cache_cluster_id
+}
