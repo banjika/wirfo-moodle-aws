@@ -1,0 +1,15 @@
+---
+# tfsec global configuration for CI scans across the entire repo.
+#
+# Suppression strategy:
+# - Inline #tfsec:ignore: annotations remain primary per CLAUDE.md
+#   "Suppression discipline" (dual-record convention).
+# - This file establishes CI-level defaults only. Adding global
+#   excludes here is reserved for cases where inline annotations
+#   are infeasible (e.g., suppressing rules that would otherwise
+#   fire across hundreds of resources).
+# - Currently empty; add entries with rationale comment when needed.
+
+minimum_severity: HIGH
+
+exclude: []

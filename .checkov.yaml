@@ -1,0 +1,41 @@
+---
+# Checkov global configuration — CI-level defaults only.
+#
+# INVOCATION STRATEGY (read before adding suppressions here):
+#
+# Checkov resolves its config file based on the process CWD, NOT the
+# path passed to --directory. Running `checkov -d .` from the repo root
+# therefore picks up ONLY this file — it does NOT discover or merge
+# per-subtree .checkov.yaml files in subdirectories.
+#
+# This project uses the locality principle: per-module suppressions live
+# next to the code they describe, in:
+#   terraform/bootstrap/.checkov.yaml
+#   terraform/modules/*/.checkov.yaml      (one per module)
+#   terraform/environments/pilot/.checkov.yaml  (mirrors all module skips
+#                                                for transitive root scans)
+#
+# CI MUST invoke checkov per-subtree, not from repo root:
+#   checkov --directory terraform/bootstrap --framework terraform --quiet
+#   checkov --directory terraform/environments/pilot --framework terraform --quiet
+#
+# Running `checkov --directory . --framework terraform` from repo root will
+# show 71+ "failures" — all already-documented suppressions that the
+# per-subtree configs handle. This is checkov's CWD-based resolution
+# behavior, not a project bug. (Diagnosed in T-026.)
+#
+# T-027 (CI plan workflow) and T-028 (CI apply workflow) follow this pattern.
+#
+# Adding suppressions HERE is reserved for repo-wide rules that fire across
+# ALL modules AND cannot be suppressed in any single subtree config (rare).
+
+framework:
+  - terraform
+
+soft-fail: false
+
+compact: true
+
+quiet: true
+
+skip-check: []
