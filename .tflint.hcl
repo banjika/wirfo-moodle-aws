@@ -6,6 +6,7 @@
 # (introduced in tflint v0.51.0) is intentionally absent here so
 # that the v0.50.3 pinned in .github/workflows/terraform-*.yml
 # can parse this file.
+# Operator runbooks for failure scenarios live in docs/runbooks/.
 
 plugin "terraform" {
   enabled = true
