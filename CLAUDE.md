@@ -201,3 +201,57 @@ lines):
 1. Regular # comments first
 2. #checkov:skip lines next
 3. #tfsec:ignore as the LAST comment line
+
+## CI/CD lessons (Stage 9 shakeout)
+
+The first end-to-end CI run surfaced four version-drift bugs that local validation missed. Future tasks should expect similar shakeout when CI tooling is touched.
+
+### Version pinning is mandatory at every layer
+
+Local environment evolves; CI is static. Drift between them is the #1 source of "first CI run fails" bugs. Pin tightly:
+
+- Terraform: `TF_VERSION` in workflows must match local `terraform version`. When bumping local, bump CI in the same PR. Lesson: T-027 pinned 1.7.5 while modules required >= 1.9.
+- tflint: pin to specific patch (`0.50.3`), not range. The top-level `tflint { required_version }` block was introduced in v0.51.0; older versions reject it as "Unsupported block type".
+- checkov: rule IDs drift across versions. CKV2_AWS_34 (local) and CKV_AWS_337 (CI) check the same thing. When CI surfaces a "new" failure with the same intent as an existing suppression, ADD the new ID alongside the existing one — don't replace.
+- All GitHub Actions: pinned to major version (`@v4`) or SHA. Never `@main` or `@master` (mutable refs are a security risk).
+
+### Per-subtree checkov invocation
+
+Checkov resolves config from CWD, not the `--directory` argument. Running `checkov -d .` from repo root does NOT discover nested `.checkov.yaml` files. CI invokes per-subtree:
+
+    checkov -d terraform/bootstrap --framework terraform --quiet
+    checkov -d terraform/environments/pilot --framework terraform --quiet
+
+This preserves the locality principle (per-module suppressions with rationale next to the code).
+
+### Stub values for CI plan testing
+
+Repo variables for CI plan validation:
+
+- `ALARM_EMAIL=test@example.com`
+- `MOODLE_ADMIN_EMAIL=test@example.com`
+- `DMARC_RUA_ADDRESS=test@example.com`
+
+`example.com` is RFC 2606 reserved (guaranteed inert). Real values live in `terraform.tfvars` (gitignored, supplied at apply time, kept out of CI). Never use real project domains as stubs.
+
+### git ls-files trumps Test-Path / ls
+
+A file you can see locally isn't necessarily tracked in git. T-024 created `canary/nodejs/node_modules/moodleLogin.js` but it was silently filtered by `node_modules/` exclusion in `.gitignore`. Local plan worked because the working tree had the file; CI failed because clean clone didn't.
+
+When AWS service requires unusual nesting (path conventions tied to runtime contracts), verify with `git ls-files <dir>`, not just that `Test-Path` shows the file.
+
+Fix pattern: negation rules in `.gitignore` exempting only the specific required path, while preserving general exclusion:
+
+    node_modules/
+    !terraform/modules/observability/canary/nodejs/
+    !terraform/modules/observability/canary/nodejs/node_modules/
+    !terraform/modules/observability/canary/nodejs/node_modules/**
+
+### Apply workflow gating
+
+Apply triggers on push to `main`, not on PRs. The `production` GitHub Environment requires operator approval before any step runs. The first push to `main` after T-028 was rejected deliberately to validate the gate works. Re-trigger via empty commit when ready for actual apply:
+
+    git commit --allow-empty -m "trigger first apply"
+    git push
+
+    
