@@ -7,6 +7,7 @@
 # that the v0.50.3 pinned in .github/workflows/terraform-*.yml
 # can parse this file.
 # Operator runbooks for failure scenarios live in docs/runbooks/.
+# Operator first-run checklist: docs/first-run-checklist.md.
 
 plugin "terraform" {
   enabled = true
