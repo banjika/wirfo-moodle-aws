@@ -34,7 +34,7 @@ resource "aws_cloudfront_distribution" "moodle" {
   enabled         = true
   is_ipv6_enabled = true
   # Dual-stack — CloudFront serves over both IPv4 and IPv6.
-  comment             = "Moodle Academy — Phase 1 single-instance origin"
+  comment             = "Moodle Academy - Phase 1 single-instance origin"
   aliases             = [var.domain_name]
   default_root_object = ""
   price_class         = "PriceClass_100"

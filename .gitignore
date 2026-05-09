@@ -78,3 +78,8 @@ build/
 
 # ---- Claude Code session data ----
 .claude/sessions/
+
+# Debug artifacts from operator investigation
+console-output*.txt
+plan-output*.txt
+

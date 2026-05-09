@@ -50,7 +50,7 @@ resource "aws_route53_record" "spf" {
   name    = "wirfoncloud.com"
   type    = "TXT"
   ttl     = 600
-  records = ["v=spf1 include:amazonses.com -all"]
+  records = ["v=spf1 include:_spf.google.com include:zohomail.com include:amazonses.com ~all"]
 }
 
 # ---------------------------------------------------------------------
@@ -71,7 +71,7 @@ resource "aws_route53_record" "dmarc" {
   type    = "TXT"
   ttl     = 600
   records = [
-    "v=DMARC1; p=quarantine; rua=mailto:${var.dmarc_rua_address}"
+    "v=DMARC1; p=none; rua=mailto:${var.dmarc_rua_address}"
   ]
 }
 

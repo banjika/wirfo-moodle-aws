@@ -142,7 +142,7 @@ variable "db_max_allocated_storage_gb" {
 
 variable "db_engine_version" {
   type        = string
-  default     = "15.7"
+  default     = "15.16"
   description = "Pinned PostgreSQL minor version. Review when PG 16 reaches GA in eu-west-1."
 }
 
