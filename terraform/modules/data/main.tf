@@ -1,7 +1,7 @@
 resource "aws_db_subnet_group" "rds" {
   name        = "${var.project_name}-${var.environment}-rds"
   subnet_ids  = var.db_subnet_ids
-  description = "Subnet group for Moodle RDS PostgreSQL — both private subnets supplied (RDS API requires >= 2 AZs); Phase 1 uses a single AZ via multi_az=false on the instance, RDS picks the active AZ at creation."
+  description = "Subnet group for Moodle RDS PostgreSQL - both private subnets supplied (RDS API requires >= 2 AZs); Phase 1 uses a single AZ via multi_az=false on the instance, RDS picks the active AZ at creation."
 
   tags = {
     Name = "${var.project_name}-${var.environment}-rds-subnet-group"
@@ -79,7 +79,6 @@ resource "aws_db_instance" "rds" {
   username = var.db_master_username
   password = var.db_master_password
 
-  manage_master_user_password = false
   # Manual rotation in Phase 1; auto-rotation deferred to Phase 2 (would need VPC-attached Lambda +
   # Interface VPC Endpoint, contradicts Phase 1 no-NAT cost stance per requirements §2.1).
 

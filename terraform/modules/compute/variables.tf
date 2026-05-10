@@ -103,6 +103,11 @@ variable "db_endpoint" {
   description = "RDS PostgreSQL endpoint in host:port format. Passed to the Moodle CLI installer and createdb."
 }
 
+variable "db_address" {
+  type        = string
+  description = "DB hostname WITHOUT port (e.g., moodle-academy-pilot-rds.xxx.eu-west-1.rds.amazonaws.com). Used in user-data for psql -h and Moodle CLI installer's --dbhost which both expect host-only."
+}
+
 variable "db_port" {
   type        = number
   description = "RDS PostgreSQL port. Typically 5432."

@@ -15,7 +15,7 @@
 
 resource "aws_cloudwatch_metric_alarm" "ec2_status_check" {
   alarm_name          = "${var.project_name}-${var.environment}-ec2-status-check-failed-system"
-  alarm_description   = "EC2 system status check failed (underlying hardware) — triggers Auto Recovery."
+  alarm_description   = "EC2 system status check failed (underlying hardware) - triggers Auto Recovery."
   namespace           = "AWS/EC2"
   metric_name         = "StatusCheckFailed_System"
   statistic           = "Maximum"

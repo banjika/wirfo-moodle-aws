@@ -61,6 +61,20 @@ resource "aws_efs_file_system_policy" "moodledata" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid       = "AllowTLSAccessFromMoodleEC2"
+        Effect    = "Allow"
+        Principal = { AWS = var.ec2_role_arn }
+        Action = [
+          "elasticfilesystem:ClientMount",
+          "elasticfilesystem:ClientRootAccess",
+          "elasticfilesystem:ClientWrite",
+        ]
+        Resource = aws_efs_file_system.moodledata.arn
+        Condition = {
+          Bool = { "aws:SecureTransport" = "true" }
+        }
+      },
+      {
         Sid       = "DenyNonTLSAccess"
         Effect    = "Deny"
         Principal = { AWS = "*" }

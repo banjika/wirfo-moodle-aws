@@ -23,6 +23,11 @@ output "ec2_instance_profile_name" {
   value       = aws_iam_instance_profile.moodle_ec2.name
 }
 
+output "ec2_role_arn" {
+  description = "ARN of the IAM role assumed by the Moodle EC2 instance. Consumed by modules/storage (EFS file system policy explicit-allow) and modules/data (future IAM DB auth)."
+  value       = aws_iam_role.moodle_ec2.arn
+}
+
 output "backup_role_arn" {
   description = "ARN of the IAM role assumed by AWS Backup."
   value       = aws_iam_role.aws_backup.arn

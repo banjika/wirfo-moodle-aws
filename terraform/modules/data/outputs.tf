@@ -3,6 +3,11 @@ output "db_endpoint" {
   value       = aws_db_instance.rds.endpoint
 }
 
+output "db_address" {
+  description = "DNS hostname only (without port). Use this when the consumer expects host and port as separate arguments (e.g., psql -h <host> -p <port>, Moodle's --dbhost expects host only)."
+  value       = aws_db_instance.rds.address
+}
+
 output "db_port" {
   description = "PostgreSQL port (5432)."
   value       = aws_db_instance.rds.port

@@ -34,7 +34,7 @@ resource "aws_cloudfront_distribution" "moodle" {
   enabled         = true
   is_ipv6_enabled = true
   # Dual-stack — CloudFront serves over both IPv4 and IPv6.
-  comment             = "Moodle Academy — Phase 1 single-instance origin"
+  comment             = "Moodle Academy - Phase 1 single-instance origin"
   aliases             = [var.domain_name]
   default_root_object = ""
   price_class         = "PriceClass_100"
@@ -48,7 +48,7 @@ resource "aws_cloudfront_distribution" "moodle" {
     custom_origin_config {
       http_port  = 80
       https_port = 443
-      # origin_protocol_policy = "http-only": Phase 1 EC2 origin has no TLS cert.
+      # origin_protocol_policy = "https-only": Phase 1 EC2 origin has no TLS cert.
       # Viewer-facing HTTPS is enforced by viewer_protocol_policy = "redirect-to-https".
       # Phase 2 may add ACM Private CA + cert on the origin to switch to "https-only".
       origin_protocol_policy = "http-only"
