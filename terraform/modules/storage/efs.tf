@@ -60,7 +60,7 @@ resource "aws_efs_file_system_policy" "moodledata" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-     {
+      {
         Sid       = "AllowTLSAccessFromMoodleEC2"
         Effect    = "Allow"
         Principal = { AWS = var.ec2_role_arn }
