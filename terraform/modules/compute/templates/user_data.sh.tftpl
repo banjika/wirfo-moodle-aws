@@ -21,11 +21,23 @@ apt-get install -y \
   fail2ban \
   unattended-upgrades \
   awscli \
-  amazon-cloudwatch-agent \
   nfs-common \
   stunnel4 \
-  amazon-efs-utils \
-  jq
+  jq \
+  git \
+  binutils \
+  rpm2cpio 
+
+curl -fsSL "https://s3.eu-west-1.amazonaws.com/amazoncloudwatch-agent-eu-west-1/ubuntu/arm64/latest/amazon-cloudwatch-agent.deb" -o /tmp/amazon-cloudwatch-agent.deb
+dpkg -i /tmp/amazon-cloudwatch-agent.deb
+
+# Install amazon-efs-utils from source (not in apt for arm64)
+git clone --depth 1 --branch v1.36.0 https://github.com/aws/efs-utils /tmp/efs-utils
+cd /tmp/efs-utils
+./build-deb.sh
+apt-get install -y ./build/amazon-efs-utils*deb
+cd /
+rm -rf /tmp/efs-utils 
 
 # ---------------------------------------------------------------------------
 # Step 3 — Enable fail2ban with default Apache jails
@@ -104,10 +116,22 @@ systemctl restart apache2
 # Create the database first; Moodle's installer does not create it.
 # ---------------------------------------------------------------------------
 PGPASSWORD="$DB_PASS" createdb \
-  -h "${db_endpoint}" \
+  -h "${db_address}" \
   -p "${db_port}" \
   -U "$DB_USER" \
   moodle || echo "DB may already exist; continuing"
+
+# Configure PHP for Moodle requirements (CLI and Apache use separate ini files)
+cat > /etc/php/8.1/mods-available/moodle.ini <<'PHPCONF'
+max_input_vars = 5000
+post_max_size = 100M
+upload_max_filesize = 100M
+memory_limit = 256M
+max_execution_time = 300
+PHPCONF
+
+phpenmod -v 8.1 -s ALL moodle
+systemctl restart apache2
 
 sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/install.php \
   --non-interactive \
@@ -115,7 +139,7 @@ sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/install.php \
   --wwwroot="https://${domain_name}" \
   --dataroot=/var/moodledata \
   --dbtype=pgsql \
-  --dbhost="${db_endpoint}" \
+  --dbhost="${db_address}" \
   --dbport="${db_port}" \
   --dbname=moodle \
   --dbuser="$DB_USER" \

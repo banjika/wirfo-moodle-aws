@@ -110,6 +110,25 @@ resource "aws_iam_role_policy" "moodle_ec2_cw_metrics" {
   })
 }
 
+#tfsec:ignore:aws-iam-no-policy-wildcards Resource=* required for EFS Client* actions because the security module does not import the EFS ARN (would create network->security->storage->security cycle). Effective scoping is enforced by the EFS file_system_policy in modules/storage which only grants access to this exact role on the specific EFS file system.
+resource "aws_iam_role_policy" "moodle_ec2_efs_client" {
+  name = "efs-client-mount"
+  role = aws_iam_role.moodle_ec2.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "elasticfilesystem:ClientMount",
+        "elasticfilesystem:ClientWrite",
+        "elasticfilesystem:ClientRootAccess",
+        "elasticfilesystem:DescribeMountTargets",
+      ]
+      Resource = "*"
+    }]
+  })
+}
+
 resource "aws_iam_instance_profile" "moodle_ec2" {
   name = aws_iam_role.moodle_ec2.name
   role = aws_iam_role.moodle_ec2.name

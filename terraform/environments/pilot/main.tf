@@ -59,6 +59,7 @@ module "storage" {
   efs_throughput_mode       = var.efs_throughput_mode
   efs_backup_retention_days = var.efs_backup_retention_days
   backup_role_arn           = module.security.backup_role_arn
+  ec2_role_arn              = module.security.ec2_role_arn
   # First consumer of the aws_backup role created in T-012.
 }
 
@@ -89,6 +90,7 @@ module "compute" {
   admin_secret_arn          = module.security.admin_secret_arn
 
   # From module.data
+  db_address  = module.data.db_address
   db_endpoint = module.data.db_endpoint
   db_port     = module.data.db_port
 

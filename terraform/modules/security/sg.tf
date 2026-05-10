@@ -17,10 +17,14 @@ resource "aws_security_group" "web" {
   vpc_id      = var.vpc_id
 
   # No inline rules; rules managed via aws_vpc_security_group_*_rule below.
+  # egress = [] is set ONCE at create time to prevent AWS's default allow-all rule.
+  # ignore_changes prevents subsequent description/tag updates from clobbering
+  # the standalone aws_vpc_security_group_egress_rule resources.
   egress = []
 
   lifecycle {
     create_before_destroy = true
+    ignore_changes        = [egress]
   }
 
   tags = {
@@ -37,6 +41,7 @@ resource "aws_security_group" "db" {
 
   lifecycle {
     create_before_destroy = true
+    ignore_changes        = [egress]
   }
 
   tags = {
@@ -53,6 +58,7 @@ resource "aws_security_group" "cache" {
 
   lifecycle {
     create_before_destroy = true
+    ignore_changes        = [egress]
   }
 
   tags = {
@@ -69,6 +75,7 @@ resource "aws_security_group" "efs" {
 
   lifecycle {
     create_before_destroy = true
+    ignore_changes        = [egress]
   }
 
   tags = {

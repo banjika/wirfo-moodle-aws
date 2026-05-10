@@ -41,6 +41,7 @@ resource "aws_instance" "moodle" {
     domain_name        = var.domain_name
     moodle_admin_email = var.moodle_admin_email
     db_endpoint        = var.db_endpoint
+    db_address         = var.db_address
     db_port            = var.db_port
     db_secret_arn      = var.db_secret_arn
     cache_endpoint     = var.cache_endpoint

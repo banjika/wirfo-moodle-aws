@@ -57,3 +57,9 @@ variable "backup_role_arn" {
     error_message = "backup_role_arn must be a valid IAM role ARN."
   }
 }
+
+variable "ec2_role_arn" {
+  type        = string
+  description = "ARN of the EC2 instance role that needs EFS client mount/read/write access. The EFS file system policy explicitly grants ClientMount/ClientWrite/ClientRootAccess to this role over TLS."
+}
+
