@@ -178,7 +178,6 @@ global \$CFG;
 // CloudFront / TLS-upstream settings
 \$CFG->cookiesecure = true;
 \$CFG->sslproxy     = true;
-\$CFG->reverseproxy = true;
 
 // Valkey session/cache configuration
 \$CFG->session_handler_class = '\\\\core\\\\session\\\\redis';
@@ -227,7 +226,6 @@ else
 // CloudFront / TLS-upstream settings
 $CFG->cookiesecure = true;
 $CFG->sslproxy = true;
-$CFG->reverseproxy = true;
 
 // Valkey session/cache configuration
 $CFG->session_handler_class = '\core\session\redis';
