@@ -112,16 +112,22 @@ a2enmod rewrite headers
 systemctl restart apache2
 
 # ---------------------------------------------------------------------------
-# Step 8 — Run Moodle CLI installer
-# Create the database first; Moodle's installer does not create it.
+# Step 8 - Install or upgrade Moodle (rebuild-safe; T-029.5)
+# Marker file lives on EFS so it survives EC2 replacement. Presence means
+# this RDS database already has Moodle's schema (set by a previous fresh
+# install). On rebuild we skip install.php (which would error with
+# "Database tables already present") and run upgrade.php instead. This
+# makes user-data idempotent across both fresh installs and rebuilds.
 # ---------------------------------------------------------------------------
+
+# DB creation is idempotent: createdb returns nonzero if it exists, which we ignore.
 PGPASSWORD="$DB_PASS" createdb \
   -h "${db_address}" \
   -p "${db_port}" \
   -U "$DB_USER" \
   moodle || echo "DB may already exist; continuing"
 
-# Configure PHP for Moodle requirements (CLI and Apache use separate ini files)
+# Configure PHP for Moodle requirements (CLI and Apache use separate ini files).
 cat > /etc/php/8.1/mods-available/moodle.ini <<'PHPCONF'
 max_input_vars = 5000
 post_max_size = 100M
@@ -133,44 +139,90 @@ PHPCONF
 phpenmod -v 8.1 -s ALL moodle
 systemctl restart apache2
 
-sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/install.php \
-  --non-interactive \
-  --agree-license \
-  --wwwroot="https://${domain_name}" \
-  --dataroot=/var/moodledata \
-  --dbtype=pgsql \
-  --dbhost="${db_address}" \
-  --dbport="${db_port}" \
-  --dbname=moodle \
-  --dbuser="$DB_USER" \
-  --dbpass="$DB_PASS" \
-  --fullname="Moodle Academy" \
-  --shortname="academy" \
-  --adminuser=admin \
-  --adminpass="$ADMIN_PASS" \
-  --adminemail="${moodle_admin_email}"
+if [ -f /var/moodledata/.moodle-installed ]; then
+  # ----- Rebuild path: marker exists, DB has schema, render config.php directly. -----
+  echo "user-data: rebuild path - marker /var/moodledata/.moodle-installed found"
 
-# --------------------------------------------------------------------------
-# Step 8.5 - clear post-install registration prompt
-# Moodle CLI installer leaves $CFG->registrationpending = 1 so the first
-# human admin gets prompted to register the site with moodle.net on first
-# login. In a headless deployment no human visits the wizard, the flag
-# never clears, and core/hub/registration::registration_reminder()
-# triggers a redirect loop on every framework request. Clearing the flag
-# now suppresses the prompt; the site can still be registered manually
-# later via Site administration -> Registration.
-# --------------------------------------------------------------------------
-sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/cfg.php \
-  --name=registrationpending \
-  --set=0
+  # Render a complete config.php deterministically. install.php is skipped because
+  # it would error with "Database tables already present" against the existing RDS.
+  # The CloudFront/Valkey overrides that the fresh-install path appends after
+  # install.php are baked into this single rendered file - no append step needed.
+  # Heredoc is unquoted so bash expands $DB_USER / $DB_PASS; Terraform expands
+  # $${db_address} / $${cache_endpoint} / etc. before this script runs.
+  # PHP's $CFG references are escaped with backslash so bash leaves them literal.
+  cat > /var/www/moodle/config.php <<PHPCONFIG
+<?php
+unset(\$CFG);
+global \$CFG;
+\$CFG = new stdClass();
 
-# ---------------------------------------------------------------------------
-# Step 9 - Append CloudFront-aware and Valkey session settings to config.php
-# Terraform renders cache_endpoint, cache_port, and cache_auth_token before this script runs.
-# <<'PHPEOF' prevents bash from expanding $CFG as a shell variable.
-# $CFG is a PHP variable; it must appear literally in config.php.
-# ---------------------------------------------------------------------------
-cat >> /var/www/moodle/config.php <<'PHPEOF'
+\$CFG->dbtype    = 'pgsql';
+\$CFG->dblibrary = 'native';
+\$CFG->dbhost    = '${db_address}';
+\$CFG->dbport    = '${db_port}';
+\$CFG->dbname    = 'moodle';
+\$CFG->dbuser    = '$DB_USER';
+\$CFG->dbpass    = '$DB_PASS';
+\$CFG->prefix    = 'mdl_';
+\$CFG->dboptions = array(
+    'dbpersist' => 0,
+    'dbsocket'  => 0,
+    'dbhandlesoptions' => false,
+);
+
+\$CFG->wwwroot   = 'https://${domain_name}';
+\$CFG->dataroot  = '/var/moodledata';
+\$CFG->admin     = 'admin';
+\$CFG->directorypermissions = 02777;
+
+// CloudFront / TLS-upstream settings
+\$CFG->cookiesecure = true;
+\$CFG->sslproxy     = true;
+\$CFG->reverseproxy = true;
+
+// Valkey session/cache configuration
+\$CFG->session_handler_class = '\\\\core\\\\session\\\\redis';
+\$CFG->session_redis_host    = '${cache_endpoint}';
+\$CFG->session_redis_port    = ${cache_port};
+\$CFG->session_redis_auth    = '${cache_auth_token}';
+\$CFG->session_redis_encrypt = true;
+
+require_once(__DIR__ . '/lib/setup.php');
+PHPCONFIG
+
+  chown www-data:www-data /var/www/moodle/config.php
+  chmod 640 /var/www/moodle/config.php
+
+  # Run upgrade.php to handle any version drift between codebase and DB schema.
+  # --non-interactive accepts all upgrade prompts; safe because the codebase
+  # version is pinned by Step 6 (Moodle 4.3 LTS).
+  sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/upgrade.php --non-interactive
+
+else
+  # ----- Fresh-install path: no marker, install.php creates schema and config.php. -----
+  echo "user-data: fresh-install path - marker not found, running install.php"
+
+  sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/install.php \
+    --non-interactive \
+    --agree-license \
+    --wwwroot="https://${domain_name}" \
+    --dataroot=/var/moodledata \
+    --dbtype=pgsql \
+    --dbhost="${db_address}" \
+    --dbport="${db_port}" \
+    --dbname=moodle \
+    --dbuser="$DB_USER" \
+    --dbpass="$DB_PASS" \
+    --fullname="Moodle Academy" \
+    --shortname="academy" \
+    --adminuser=admin \
+    --adminpass="$ADMIN_PASS" \
+    --adminemail="${moodle_admin_email}"
+
+  # Append CloudFront-aware and Valkey settings to install.php's config.php.
+  # <<'PHPEOF' (quoted) prevents bash from expanding $CFG as a shell variable.
+  # Terraform still expands $${cache_endpoint} etc. before bash ever sees this.
+  cat >> /var/www/moodle/config.php <<'PHPEOF'
 
 // CloudFront / TLS-upstream settings
 $CFG->cookiesecure = true;
@@ -184,6 +236,27 @@ $CFG->session_redis_port = ${cache_port};
 $CFG->session_redis_auth = '${cache_auth_token}';
 $CFG->session_redis_encrypt = true;
 PHPEOF
+
+  # Mark this RDS database as "Moodle-installed" on EFS so future rebuilds
+  # take the upgrade-only path above. Marker file lives on EFS, not EBS,
+  # so it survives EC2 replacement.
+  sudo -u www-data touch /var/moodledata/.moodle-installed
+fi
+
+# ---------------------------------------------------------------------------
+# Step 8.5 - Clear post-install registration prompt (always-run, idempotent)
+# Moodle CLI installer leaves $CFG->registrationpending = 1. In headless
+# deployments no human visits the moodle.net registration wizard, so the
+# flag never clears, and core/hub/registration::registration_reminder()
+# triggers a redirect loop on every framework request. Setting to 0
+# suppresses the prompt; site can still be registered manually later via
+# Site administration -> Registration. Idempotent: setting an already-0
+# value is a no-op.
+# ---------------------------------------------------------------------------
+sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/cfg.php \
+  --name=registrationpending \
+  --set=0
+  
 
 # ---------------------------------------------------------------------------
 # Step 10 — Configure CloudWatch Agent
