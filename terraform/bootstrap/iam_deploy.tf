@@ -96,10 +96,25 @@ resource "aws_iam_role_policy" "deploy" {
         Resource = "*"
       },
       {
-        Sid      = "SES"
+        Sid      = "SESIdentityScoped"
         Effect   = "Allow"
         Action   = "ses:*"
         Resource = "arn:aws:ses:eu-west-1:${data.aws_caller_identity.current.account_id}:identity/wirfoncloud.com"
+      },
+      {
+        # ses:GetIdentityVerificationAttributes is not resource-restrictable.
+        # Account-wide read actions used by Terraform's plan refresh on the SES domain identity.
+        Sid    = "SESAccountReads"
+        Effect = "Allow"
+        Action = [
+          "ses:GetIdentityVerificationAttributes",
+          "ses:GetIdentityDkimAttributes",
+          "ses:GetIdentityNotificationAttributes",
+          "ses:GetIdentityPolicies",
+          "ses:ListIdentities",
+          "ses:ListIdentityPolicies",
+        ]
+        Resource = "*"
       },
       {
         Sid      = "CloudWatch"
@@ -138,25 +153,37 @@ resource "aws_iam_role_policy" "deploy" {
         Resource = "*"
       },
       {
+        Sid      = "Synthetics"
+        Effect   = "Allow"
+        Action   = "synthetics:*"
+        Resource = "*"
+      },
+      {
         Sid      = "SecretsManager"
         Effect   = "Allow"
         Action   = "secretsmanager:*"
         Resource = "arn:aws:secretsmanager:eu-west-1:${data.aws_caller_identity.current.account_id}:secret:moodle/*"
       },
       {
-        Sid    = "SSMParameterStore"
+        Sid    = "SSMParameterStoreScoped"
         Effect = "Allow"
         Action = [
           "ssm:PutParameter",
           "ssm:GetParameter",
+          "ssm:GetParameters",
           "ssm:DeleteParameter",
           "ssm:GetParameterHistory",
-          "ssm:DescribeParameters",
           "ssm:AddTagsToResource",
           "ssm:RemoveTagsFromResource",
           "ssm:ListTagsForResource",
         ]
         Resource = "arn:aws:ssm:eu-west-1:${data.aws_caller_identity.current.account_id}:parameter/moodle/*"
+      },
+      { # ssm:DescribeParameters is not resource-restrictable; returns metadata for all parameters.
+        Sid      = "SSMDescribeAccountWide"
+        Effect   = "Allow"
+        Action   = "ssm:DescribeParameters"
+        Resource = "*"
       },
       {
         Sid      = "IAMTagScoped"
@@ -186,6 +213,9 @@ resource "aws_iam_role_policy" "deploy" {
           "arn:aws:s3:::wirfo-moodle-tfstate-${data.aws_caller_identity.current.account_id}/*",
           "arn:aws:s3:::wirfo-moodle-cloudtrail-${data.aws_caller_identity.current.account_id}",
           "arn:aws:s3:::wirfo-moodle-cloudtrail-${data.aws_caller_identity.current.account_id}/*",
+          # T-024 canary-artifacts bucket — synthetics module needs S3 reads on plan refresh.
+          "arn:aws:s3:::moodle-academy-pilot-canary-${data.aws_caller_identity.current.account_id}",
+          "arn:aws:s3:::moodle-academy-pilot-canary-${data.aws_caller_identity.current.account_id}/*",
         ]
       },
       {

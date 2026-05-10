@@ -5,7 +5,9 @@
 # on Windows; the .checkov.yaml is the operational mechanism.
 
 skip-check:
-  - CKV2_AWS_5   # modules/security — SGs are declared here; attached to resources in T-014 (RDS), T-015 (cache), T-016 (EFS), T-018 (EC2). Permanent Phase 1 stance.
+  - CKV2_AWS_5   # modules/security - SGs are declared here; attached to resources in T-014 (RDS), T-015 (cache), T-016 (EFS), T-018 (EC2). Permanent Phase 1 stance.
   - CKV_AWS_260  # web_sg port 80 ingress uses CloudFront managed prefix list (data.aws_ec2_managed_prefix_list.cloudfront_origin), not 0.0.0.0/0. Checkov pattern doesn't inspect prefix_list_id source on aws_vpc_security_group_ingress_rule. CLAUDE.md hard rule #7. Permanent.
-  - CKV_AWS_149  # Secrets Manager — no CMK in Phase 1 per CLAUDE.md hard rule #3; uses aws/secretsmanager default key. CMK deferred to Phase 2 for payment data isolation.
+  - CKV_AWS_149  # Secrets Manager - no CMK in Phase 1 per CLAUDE.md hard rule #3; uses aws/secretsmanager default key. CMK deferred to Phase 2 for payment data isolation.
   - CKV2_AWS_57  # Secrets Manager auto-rotation deferred to Phase 2 per requirements §2.1; requires VPC-attached Lambda + Interface VPC Endpoint, contradicting Phase 1 no-NAT cost stance.
+  - CKV_AWS_290   # moodle_ec2_efs_client policy - EFS Resource=* required because security module cannot import EFS ARN without dependency cycle. Effective scoping enforced by EFS file_system_policy in modules/storage which restricts mount to this exact role ARN.
+  - CKV_AWS_355   # moodle_ec2_efs_client policy - same root cause as CKV_AWS_290. Four ClientMount-family actions are themselves narrowly scoped; only Resource is wildcard, intentionally.
