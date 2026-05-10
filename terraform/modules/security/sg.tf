@@ -89,14 +89,14 @@ resource "aws_security_group" "efs" {
 
 resource "aws_vpc_security_group_ingress_rule" "web_https_from_cloudfront" {
   security_group_id = aws_security_group.web.id
-  description       = "HTTPS from CloudFront origin-facing prefix list"
+  description       = "HTTP from CloudFront origin-facing prefix list (Phase 1 plain-HTTP origin hop; Phase 2 ACM Private CA reverts to 443)"
   ip_protocol       = "tcp"
-  from_port         = 443
-  to_port           = 443
+  from_port         = 80
+  to_port           = 80
   prefix_list_id    = data.aws_ec2_managed_prefix_list.cloudfront_origin.id
 
   tags = {
-    Name = "${var.project_name}-${var.environment}-web-ingress-443-cloudfront"
+    Name = "${var.project_name}-${var.environment}-web-ingress-80-cloudfront"
   }
 }
 

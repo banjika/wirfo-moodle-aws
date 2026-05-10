@@ -150,8 +150,22 @@ sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/install.php \
   --adminpass="$ADMIN_PASS" \
   --adminemail="${moodle_admin_email}"
 
+# --------------------------------------------------------------------------
+# Step 8.5 - clear post-install registration prompt
+# Moodle CLI installer leaves $CFG->registrationpending = 1 so the first
+# human admin gets prompted to register the site with moodle.net on first
+# login. In a headless deployment no human visits the wizard, the flag
+# never clears, and core/hub/registration::registration_reminder()
+# triggers a redirect loop on every framework request. Clearing the flag
+# now suppresses the prompt; the site can still be registered manually
+# later via Site administration -> Registration.
+# --------------------------------------------------------------------------
+sudo -u www-data /usr/bin/php /var/www/moodle/admin/cli/cfg.php \
+  --name=registrationpending \
+  --set=0
+
 # ---------------------------------------------------------------------------
-# Step 9 — Append CloudFront-aware and Valkey session settings to config.php
+# Step 9 - Append CloudFront-aware and Valkey session settings to config.php
 # Terraform renders cache_endpoint, cache_port, and cache_auth_token before this script runs.
 # <<'PHPEOF' prevents bash from expanding $CFG as a shell variable.
 # $CFG is a PHP variable; it must appear literally in config.php.
