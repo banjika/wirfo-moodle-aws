@@ -120,6 +120,26 @@ resource "aws_cloudfront_distribution" "moodle" {
     origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3"
   }
 
+  # /lib/ajax/* - Moodle's AJAX RPC endpoint (notably /lib/ajax/service.php).
+  # POST-heavy and per-request dynamic; must NOT be cached and must allow all
+  # methods. Precedence: this block must come before the /lib/* block below so
+  # CloudFront matches /lib/ajax/* first. See post-mortem 2026-05-11.
+  ordered_cache_behavior {
+    path_pattern           = "/lib/ajax/*"
+    target_origin_id       = "moodle-ec2-origin"
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods         = ["GET", "HEAD"]
+    compress               = true
+
+    cache_policy_id = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+    # AWS-managed Managed-CachingDisabled. AJAX responses are per-user and
+    # state-changing; caching them would corrupt sessions.
+
+    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3"
+    # Managed-AllViewer - same as other behaviors for Host header consistency.
+  }
+
   ordered_cache_behavior {
     path_pattern           = "/lib/*"
     target_origin_id       = "moodle-ec2-origin"

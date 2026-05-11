@@ -199,7 +199,8 @@ Three settings must align to prevent Moodle generating links that point at the E
   - `aws_cloudfront_distribution`
     - **Origin:** custom origin pointing at the EC2 EIP DNS name (e.g. `ec2-…compute.amazonaws.com`), `origin_protocol_policy = "https-only"`, `origin_ssl_protocols = ["TLSv1.2"]`
     - **Default cache behavior:** GET/HEAD/OPTIONS, `viewer_protocol_policy = "redirect-to-https"`, AWS-managed cache policy `Managed-CachingDisabled` (Moodle is mostly dynamic), AWS-managed origin request policy `Managed-AllViewer` so Moodle sees real headers/cookies
-    - **Static-asset cache behavior** for `/theme/*`, `/pluginfile.php/*`, `/lib/*`, `*.css`, `*.js` paths: AWS-managed `Managed-CachingOptimized` policy (this is the Rwanda-latency mitigation called out in requirements §4.2)
+    - **AJAX cache behavior** for `/lib/ajax/*` (highest precedence): all HTTP methods allowed (`GET`/`HEAD`/`OPTIONS`/`PUT`/`POST`/`PATCH`/`DELETE`), AWS-managed `Managed-CachingDisabled`. Moodle's AJAX RPC endpoint (`/lib/ajax/service.php`) is POST-heavy and per-user; must be passed to the origin uncached. **Must precede the `/lib/*` behavior** below so CloudFront matches the AJAX path first. Added after post-mortem 2026-05-11.
+    - **Static-asset cache behavior** for `/theme/*`, `/pluginfile.php/*`, `/lib/*`, `*.css`, `*.js` paths: `GET`/`HEAD`/`OPTIONS` only, AWS-managed `Managed-CachingOptimized` policy (this is the Rwanda-latency mitigation called out in requirements §4.2)
     - **Viewer cert:** ACM ARN from us-east-1 lookup, `minimum_protocol_version = "TLSv1.2_2021"`, `ssl_support_method = "sni-only"`
     - **Aliases:** `[var.domain_name]`
     - **Logging:** omitted in Phase 1 to keep cost down
