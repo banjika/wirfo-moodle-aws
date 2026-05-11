@@ -100,7 +100,7 @@ resource "aws_route_table" "private" {
   }
 }
 
-# No IPv4 default route — enforces no NAT Gateway (CLAUDE.md hard rule #1).
+# No IPv4 default route - enforces no NAT Gateway (CLAUDE.md hard rule #1).
 # IPv6 egress via EIGW is wired now for Phase 3 forward-compat.
 resource "aws_route" "private_v6_default" {
   route_table_id              = aws_route_table.private.id
@@ -127,7 +127,7 @@ resource "aws_default_route_table" "default" {
 
 resource "aws_default_security_group" "default" {
   vpc_id = aws_vpc.main.id
-  # No ingress / egress blocks — empty by design.
+  # No ingress / egress blocks - empty by design.
   # CLAUDE.md hard rule #8: internal traffic uses SG-to-SG references via
   # named SGs in modules/security. This default SG must remain empty so any
   # accidentally-unassigned resource cannot communicate.

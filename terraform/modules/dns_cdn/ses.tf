@@ -18,7 +18,7 @@ resource "aws_ses_domain_dkim" "main" {
 }
 
 # ---------------------------------------------------------------------
-# DKIM CNAME records — 3 tokens written to Route 53
+# DKIM CNAME records - 3 tokens written to Route 53
 # ---------------------------------------------------------------------
 # SES generates 3 random DKIM tokens. Each needs its own CNAME at
 # <token>._domainkey.wirfoncloud.com → <token>.dkim.amazonses.com.
@@ -58,7 +58,7 @@ resource "aws_route53_record" "spf" {
 # ---------------------------------------------------------------------
 # Tells receiving servers what to do if SPF or DKIM fails:
 # quarantine (spam folder). p=quarantine is more permissive than
-# p=reject — appropriate for a Phase 1 pilot where false positives
+# p=reject - appropriate for a Phase 1 pilot where false positives
 # would block legitimate transactional mail. Phase 2 may tighten
 # to p=reject after monitoring rua reports for false positives.
 # rua=mailto:<address> requests aggregate reports of authentication
@@ -76,11 +76,11 @@ resource "aws_route53_record" "dmarc" {
 }
 
 # ---------------------------------------------------------------------
-# SES domain identity verification — BLOCKING resource
+# SES domain identity verification - BLOCKING resource
 # ---------------------------------------------------------------------
 # Polls SES until it confirms the SPF and DKIM records have
 # propagated and validated. This blocks terraform apply until the
-# email setup is genuinely ready — not just "Terraform thinks it's
+# email setup is genuinely ready - not just "Terraform thinks it's
 # done" but "SES has actually verified the domain." Default timeout
 # is 45 minutes; Route 53 propagation typically completes in 5-15
 # minutes within AWS.

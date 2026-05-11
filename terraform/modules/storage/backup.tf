@@ -5,7 +5,7 @@
 resource "aws_backup_vault" "moodle" {
   name        = "${var.project_name}-${var.environment}-moodle-backup-vault"
   kms_key_arn = null
-  # Explicit null — uses aws/backup AWS-managed key per CLAUDE.md
+  # Explicit null - uses aws/backup AWS-managed key per CLAUDE.md
   # hard rule #3 and design.md §10 row 3 (no vault-level CMK in
   # Phase 1). CMK introduced in Phase 2 alongside payment data isolation.
 
@@ -23,7 +23,7 @@ resource "aws_backup_plan" "moodle" {
     schedule          = "cron(0 2 ? * * *)"
     # 02:00 UTC daily.
     # AWS cron format: cron(minute hour day-of-month month day-of-week year)
-    # CRITICAL: either day-of-month OR day-of-week MUST be ? —
+    # CRITICAL: either day-of-month OR day-of-week MUST be ? -
     # never both *. cron(0 2 * * * *) is rejected at apply time
     # with InvalidParameterValue.
 
@@ -47,7 +47,7 @@ resource "aws_backup_selection" "moodle_efs" {
     key   = "BackupPolicy"
     value = "daily-7d"
   }
-  # Tag-based selection — picks any resource tagged
+  # Tag-based selection - picks any resource tagged
   # BackupPolicy = "daily-7d". The EFS file system created in
   # T-016 carries this tag. Forward-compatible: Phase 2 resources
   # with the same tag get included automatically with no Backup

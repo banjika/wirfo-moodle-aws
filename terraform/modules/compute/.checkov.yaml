@@ -5,5 +5,5 @@
 # (established in T-004); this file is the operational suppression mechanism.
 
 skip-check:
-  - CKV_AWS_88    # EC2 has public IP — Phase 1 EC2 in public subnet per CLAUDE.md hard rule #1 (no NAT). Web SG ingress restricted to CloudFront prefix list (T-011); admin via SSM only (hard rule #6). Phase 3 moves EC2 behind ALB into private subnets.
-  - CKV_AWS_126   # EC2 detailed monitoring disabled — Phase 1 cost stance per requirements §6. Basic 5-minute monitoring is sufficient. CloudWatch Agent (T-022) provides 1-minute app-level metrics.
+  - CKV_AWS_88    # EC2 has public IP - Phase 1 EC2 in public subnet per CLAUDE.md hard rule #1 (no NAT). Web SG ingress restricted to CloudFront prefix list (T-011); admin via SSM only (hard rule #6). Phase 3 moves EC2 behind ALB into private subnets.
+  - CKV_AWS_126   # EC2 detailed monitoring disabled - Phase 1 cost stance per requirements §6. Basic 5-minute monitoring is sufficient. CloudWatch Agent (T-022) provides 1-minute app-level metrics.

@@ -44,7 +44,7 @@ provider "aws" {
 # Regional provider aliases for GuardDuty account-wide coverage (T-025).
 # Terraform requires statically declared provider blocks; one alias per
 # opted-in region is unavoidable. default_tags must be repeated on each alias
-# — Terraform does not inherit it from the default provider.
+# - Terraform does not inherit it from the default provider.
 # ---------------------------------------------------------------------------
 
 provider "aws" {

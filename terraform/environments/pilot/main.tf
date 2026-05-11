@@ -79,7 +79,7 @@ module "compute" {
 
   # From module.network
   public_subnet_id = module.network.public_subnet_ids[0]
-  # Phase 1 single-AZ — index 0 = AZ-a (active AZ). Phase 3 may
+  # Phase 1 single-AZ - index 0 = AZ-a (active AZ). Phase 3 may
   # add a second instance wired to public_subnet_ids[1] under an
   # ASG/ALB topology.
 
@@ -111,7 +111,7 @@ module "dns_cdn" {
   # dns_cdn is the first module that requires an explicit providers
   # block. The us_east_1 alias is declared in versions.tf; the
   # module's configuration_aliases = [aws.us_east_1] requires this
-  # explicit handoff — Terraform errors at plan time without it.
+  # explicit handoff - Terraform errors at plan time without it.
   providers = {
     aws           = aws
     aws.us_east_1 = aws.us_east_1

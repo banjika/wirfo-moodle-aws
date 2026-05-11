@@ -10,18 +10,18 @@
 # (CLAUDE.md hard rules + design.md cost stance). Revisit in Phase 2.
 
 skip-check:
-  - CKV_AWS_18    # S3 access logging — Phase 1 minimal posture; revisit if Phase 2 audit posture requires it
-  - CKV_AWS_119   # DynamoDB CMK — Phase 1 uses aws/dynamodb default key per CLAUDE.md rule 3; CMK is Phase 2
-  - CKV_AWS_144   # S3 cross-region replication — Phase 1 cost stance; recoverable via bootstrap re-apply; revisit Phase 2
-  - CKV_AWS_145   # S3 CMK encryption — Phase 1 uses aws/s3 default key per CLAUDE.md rule 3; CMK is Phase 2
-  - CKV2_AWS_62   # S3 event notifications — bootstrap is human-driven, not event-driven; revisit Phase 2 if needed
-  - CKV_AWS_60    # IAM wildcard actions — deploy role uses service-wide CRUD (e.g. ec2:*, rds:*); Phase 2 tightens per design.md §5 note 4
-  - CKV_AWS_62    # IAM wildcard resources — deploy role uses Resource=* for unresourceable APIs; Phase 2 tightens per design.md §5 note 4
-  - CKV2_AWS_40   # IAM full admin — iam:* is tag-scoped (aws:ResourceTag/Project=moodle-academy); Phase 2 tightens per design.md §5 note 4
-  - CKV_AWS_287   # IAM credential exposure — secretsmanager:* and ssm:* are already moodle/*-scoped; kms:Decrypt on aws/* managed keys per CLAUDE.md rule 3; revisit Phase 2 with specific action enumeration
-  - CKV_AWS_289   # IAM permissions-management without constraints — Phase 1 service-wide CRUD on deploy role per design.md §5 note 4
-  - CKV_AWS_290   # IAM write access without constraints — Phase 1 service-wide CRUD on deploy role per design.md §5 note 4
-  - CKV_AWS_355   # IAM Resource=* for restrictable actions — Phase 1 simplification per design.md §5 note 4; Phase 2 tightens scoping
+  - CKV_AWS_18    # S3 access logging - Phase 1 minimal posture; revisit if Phase 2 audit posture requires it
+  - CKV_AWS_119   # DynamoDB CMK - Phase 1 uses aws/dynamodb default key per CLAUDE.md rule 3; CMK is Phase 2
+  - CKV_AWS_144   # S3 cross-region replication - Phase 1 cost stance; recoverable via bootstrap re-apply; revisit Phase 2
+  - CKV_AWS_145   # S3 CMK encryption - Phase 1 uses aws/s3 default key per CLAUDE.md rule 3; CMK is Phase 2
+  - CKV2_AWS_62   # S3 event notifications - bootstrap is human-driven, not event-driven; revisit Phase 2 if needed
+  - CKV_AWS_60    # IAM wildcard actions - deploy role uses service-wide CRUD (e.g. ec2:*, rds:*); Phase 2 tightens per design.md §5 note 4
+  - CKV_AWS_62    # IAM wildcard resources - deploy role uses Resource=* for unresourceable APIs; Phase 2 tightens per design.md §5 note 4
+  - CKV2_AWS_40   # IAM full admin - iam:* is tag-scoped (aws:ResourceTag/Project=moodle-academy); Phase 2 tightens per design.md §5 note 4
+  - CKV_AWS_287   # IAM credential exposure - secretsmanager:* and ssm:* are already moodle/*-scoped; kms:Decrypt on aws/* managed keys per CLAUDE.md rule 3; revisit Phase 2 with specific action enumeration
+  - CKV_AWS_289   # IAM permissions-management without constraints - Phase 1 service-wide CRUD on deploy role per design.md §5 note 4
+  - CKV_AWS_290   # IAM write access without constraints - Phase 1 service-wide CRUD on deploy role per design.md §5 note 4
+  - CKV_AWS_355   # IAM Resource=* for restrictable actions - Phase 1 simplification per design.md §5 note 4; Phase 2 tightens scoping
   - CKV_AWS_35    # CloudTrail trail at-rest encryption requires CMK; per CLAUDE.md rule 3 no CMKs in Phase 1; S3 destination bucket is SSE-S3 encrypted; revisit Phase 2.
   - CKV2_AWS_10   # CloudWatch Logs integration intentionally not configured in Phase 1; logs go to S3 with object-lock for tamper resistance per design.md §6.1; revisit Phase 2.
   - CKV_AWS_252   # SNS notifications on the trail itself not required in Phase 1; CloudTrail is for tamper-resistant historical evidence, not real-time alerting. Real-time threat detection is GuardDuty's job (T-025); per-log-file SNS notifications would be high-volume noise. Revisit Phase 2 if needed.

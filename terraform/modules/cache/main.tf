@@ -48,7 +48,7 @@ resource "aws_elasticache_replication_group" "cache" {
 
   engine         = "valkey"
   engine_version = var.cache_engine_version
-  # "7.2" — exact version with dot. The parameter group family ("valkey7") uses a different format.
+  # "7.2" - exact version with dot. The parameter group family ("valkey7") uses a different format.
   node_type = var.cache_node_type
 
   num_node_groups = 1
@@ -58,8 +58,8 @@ resource "aws_elasticache_replication_group" "cache" {
   automatic_failover_enabled = false
   # Cannot be true with replicas_per_node_group = 0
   multi_az_enabled = false
-  # CLAUDE.md hard rule #2 — single-AZ stance. ElastiCache picks the AZ at creation from the subnet group.
-  # availability_zone intentionally omitted — pinning would conflict with Phase 3 HA enable.
+  # CLAUDE.md hard rule #2 - single-AZ stance. ElastiCache picks the AZ at creation from the subnet group.
+  # availability_zone intentionally omitted - pinning would conflict with Phase 3 HA enable.
 
   port                 = 6379
   parameter_group_name = aws_elasticache_parameter_group.cache.name
@@ -69,10 +69,10 @@ resource "aws_elasticache_replication_group" "cache" {
   at_rest_encryption_enabled = true
   # CLAUDE.md hard rule #9
   kms_key_id = null
-  # Explicit null — uses aws/elasticache default key per CLAUDE.md hard rule #3 (no CMK in Phase 1).
+  # Explicit null - uses aws/elasticache default key per CLAUDE.md hard rule #3 (no CMK in Phase 1).
 
   transit_encryption_enabled = true
-  # CLAUDE.md hard rule #10 — TLS in transit
+  # CLAUDE.md hard rule #10 - TLS in transit
   transit_encryption_mode = "required"
   # Reject non-TLS connections. Stricter than default "preferred" (which accepts plaintext during transition).
 
@@ -88,7 +88,7 @@ resource "aws_elasticache_replication_group" "cache" {
   # UTC; sequenced after RDS maintenance window (sun:02:30-sun:03:30) so cache and DB don't restart simultaneously.
 
   snapshot_retention_limit = 0
-  # No snapshots in Phase 1 — Valkey is session/cache only, no durable data.
+  # No snapshots in Phase 1 - Valkey is session/cache only, no durable data.
   # DB (RDS) and EFS hold data of record.
 
   auto_minor_version_upgrade = true
@@ -99,7 +99,7 @@ resource "aws_elasticache_replication_group" "cache" {
 
   lifecycle {
     prevent_destroy = false
-    # Cache is ephemeral — losing it forces session re-login but not data loss.
+    # Cache is ephemeral - losing it forces session re-login but not data loss.
     # Unlike RDS/EFS, no prevent_destroy needed.
     ignore_changes = [
       num_cache_clusters,

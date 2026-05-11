@@ -8,4 +8,4 @@ skip-check:
   - CKV_AWS_157   # Phase 1 single-AZ per CLAUDE.md hard rule #2; var.rds_multi_az flips this in Phase 3.
   - CKV_AWS_118   # Enhanced monitoring deferred to Phase 2; requires monitoring.rds.amazonaws.com IAM role + monitoring_interval > 0. Performance Insights covers Phase 1.
   - CKV_AWS_161   # IAM DB auth deferred to Phase 3 per design.md §2.4; db_resource_id exported for eventual modules/compute IAM policy.
-  - CKV_AWS_354   # aws_db_instance.rds — Performance Insights uses aws/rds default key; no CMK in Phase 1 per CLAUDE.md hard rule #3. CMK introduced in Phase 2.
+  - CKV_AWS_354   # aws_db_instance.rds - Performance Insights uses aws/rds default key; no CMK in Phase 1 per CLAUDE.md hard rule #3. CMK introduced in Phase 2.

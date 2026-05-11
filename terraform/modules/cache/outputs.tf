@@ -14,7 +14,7 @@ output "cache_cluster_id" {
 }
 
 output "cache_auth_token" {
-  description = "Valkey AUTH token. Sensitive — read by user-data at boot to populate Moodle's session/cache config. Not stored in Secrets Manager in Phase 1 (simplification); Phase 2 may migrate to Secrets Manager for consistency with the DB credentials."
+  description = "Valkey AUTH token. Sensitive - read by user-data at boot to populate Moodle's session/cache config. Not stored in Secrets Manager in Phase 1 (simplification); Phase 2 may migrate to Secrets Manager for consistency with the DB credentials."
   value       = random_password.valkey_auth.result
   sensitive   = true
 }

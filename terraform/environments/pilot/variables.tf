@@ -93,7 +93,7 @@ variable "domain_name" {
 }
 
 variable "dmarc_rua_address" {
-  description = "RUA mailbox in the DMARC TXT record published by modules/dns_cdn. Receives aggregate authentication failure reports as machine-readable XML. No default — operator supplies a real, working email address in terraform.tfvars. Phase 2 may set up a domain-local mailbox via SES inbound + parser (e.g., dmarcian)."
+  description = "RUA mailbox in the DMARC TXT record published by modules/dns_cdn. Receives aggregate authentication failure reports as machine-readable XML. No default - operator supplies a real, working email address in terraform.tfvars. Phase 2 may set up a domain-local mailbox via SES inbound + parser (e.g., dmarcian)."
   type        = string
 
   validation {

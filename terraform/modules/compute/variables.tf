@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# GROUP 1 — Identity & tags (from workload root)
+# GROUP 1 - Identity & tags (from workload root)
 # --------------------------------------------------------------------------
 
 variable "project_name" {
@@ -13,7 +13,7 @@ variable "environment" {
 }
 
 # --------------------------------------------------------------------------
-# GROUP 2 — Instance configuration (from workload root variables)
+# GROUP 2 - Instance configuration (from workload root variables)
 # --------------------------------------------------------------------------
 
 variable "instance_type" {
@@ -42,12 +42,12 @@ variable "aws_region" {
 }
 
 # --------------------------------------------------------------------------
-# GROUP 3 — Network (from module.network)
+# GROUP 3 - Network (from module.network)
 # --------------------------------------------------------------------------
 
 variable "public_subnet_id" {
   type        = string
-  description = "Public subnet ID for the EC2 instance. SINGULAR — AZ-a only per CLAUDE.md hard rules #1 (no NAT) and #2 (single-AZ pilot). Phase 3 moves EC2 behind ALB in a private subnet."
+  description = "Public subnet ID for the EC2 instance. SINGULAR - AZ-a only per CLAUDE.md hard rules #1 (no NAT) and #2 (single-AZ pilot). Phase 3 moves EC2 behind ALB in a private subnet."
 
   validation {
     condition     = startswith(var.public_subnet_id, "subnet-")
@@ -56,7 +56,7 @@ variable "public_subnet_id" {
 }
 
 # --------------------------------------------------------------------------
-# GROUP 4 — Security (from module.security)
+# GROUP 4 - Security (from module.security)
 # --------------------------------------------------------------------------
 
 variable "web_sg_id" {
@@ -95,7 +95,7 @@ variable "admin_secret_arn" {
 }
 
 # --------------------------------------------------------------------------
-# GROUP 5 — Data (from module.data)
+# GROUP 5 - Data (from module.data)
 # --------------------------------------------------------------------------
 
 variable "db_endpoint" {
@@ -114,7 +114,7 @@ variable "db_port" {
 }
 
 # --------------------------------------------------------------------------
-# GROUP 6 — Cache (from module.cache)
+# GROUP 6 - Cache (from module.cache)
 # --------------------------------------------------------------------------
 
 variable "cache_endpoint" {
@@ -134,7 +134,7 @@ variable "cache_auth_token" {
 }
 
 # --------------------------------------------------------------------------
-# GROUP 7 — Storage (from module.storage)
+# GROUP 7 - Storage (from module.storage)
 # --------------------------------------------------------------------------
 
 variable "efs_id" {

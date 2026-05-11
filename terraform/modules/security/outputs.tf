@@ -44,7 +44,7 @@ output "admin_secret_arn" {
 }
 
 output "db_master_password" {
-  description = "RDS master password (sensitive). Used by modules/data (T-014) to set RDS master credentials. Stored in Terraform state — never log to console."
+  description = "RDS master password (sensitive). Used by modules/data (T-014) to set RDS master credentials. Stored in Terraform state - never log to console."
   value       = random_password.db_master.result
   sensitive   = true
 }

@@ -8,10 +8,10 @@
 # and the canary configuration. Phase 1 cost stance: 30-day
 # retention. Phase 2 may extend for compliance.
 # All log groups use AWS-managed encryption (kms_key_id = null,
-# uses aws/logs default) — Phase 1 hard rule #3 (no CMKs).
+# uses aws/logs default) - Phase 1 hard rule #3 (no CMKs).
 # ---------------------------------------------------------------------
 
-#checkov:skip=CKV_AWS_158: Phase 1 hard rule #3 — no CMKs. Uses AWS-managed aws/logs encryption. Phase 2 may add aws/logs CMK.
+#checkov:skip=CKV_AWS_158: Phase 1 hard rule #3 - no CMKs. Uses AWS-managed aws/logs encryption. Phase 2 may add aws/logs CMK.
 #checkov:skip=CKV_AWS_338: 30-day retention is deliberate Phase 1 cost stance per requirements §4 / design.md §3. Extended retention deferred to Phase 2 compliance review.
 #tfsec:ignore:aws-cloudwatch-log-group-customer-key
 resource "aws_cloudwatch_log_group" "app" {
@@ -24,7 +24,7 @@ resource "aws_cloudwatch_log_group" "app" {
   }
 }
 
-#checkov:skip=CKV_AWS_158: Phase 1 hard rule #3 — no CMKs. Uses AWS-managed aws/logs encryption. Phase 2 may add aws/logs CMK.
+#checkov:skip=CKV_AWS_158: Phase 1 hard rule #3 - no CMKs. Uses AWS-managed aws/logs encryption. Phase 2 may add aws/logs CMK.
 #checkov:skip=CKV_AWS_338: 30-day retention is deliberate Phase 1 cost stance per requirements §4 / design.md §3. Extended retention deferred to Phase 2 compliance review.
 #tfsec:ignore:aws-cloudwatch-log-group-customer-key
 resource "aws_cloudwatch_log_group" "web" {
@@ -37,7 +37,7 @@ resource "aws_cloudwatch_log_group" "web" {
   }
 }
 
-#checkov:skip=CKV_AWS_158: Phase 1 hard rule #3 — no CMKs. Uses AWS-managed aws/logs encryption. Phase 2 may add aws/logs CMK.
+#checkov:skip=CKV_AWS_158: Phase 1 hard rule #3 - no CMKs. Uses AWS-managed aws/logs encryption. Phase 2 may add aws/logs CMK.
 #checkov:skip=CKV_AWS_338: 30-day retention is deliberate Phase 1 cost stance per requirements §4 / design.md §3. Extended retention deferred to Phase 2 compliance review.
 #tfsec:ignore:aws-cloudwatch-log-group-customer-key
 resource "aws_cloudwatch_log_group" "system" {
@@ -50,7 +50,7 @@ resource "aws_cloudwatch_log_group" "system" {
   }
 }
 
-#checkov:skip=CKV_AWS_158: Phase 1 hard rule #3 — no CMKs. Uses AWS-managed aws/logs encryption. Phase 2 may add aws/logs CMK.
+#checkov:skip=CKV_AWS_158: Phase 1 hard rule #3 - no CMKs. Uses AWS-managed aws/logs encryption. Phase 2 may add aws/logs CMK.
 #checkov:skip=CKV_AWS_338: 30-day retention is deliberate Phase 1 cost stance per requirements §4 / design.md §3. Extended retention deferred to Phase 2 compliance review.
 #tfsec:ignore:aws-cloudwatch-log-group-customer-key
 resource "aws_cloudwatch_log_group" "canary" {
@@ -70,7 +70,7 @@ resource "aws_cloudwatch_log_group" "canary" {
 #   aws ssm get-parameter --name /moodle/cloudwatch-agent/config
 # and feeds it to amazon-cloudwatch-agent-ctl. Storing the config
 # in SSM (not embedded in user-data) lets us update the CW Agent's
-# config without redeploying the EC2 instance — just update the
+# config without redeploying the EC2 instance - just update the
 # parameter and run 'amazon-cloudwatch-agent-ctl -a fetch-config'
 # via SSM Run Command on the instance.
 #
@@ -79,7 +79,7 @@ resource "aws_cloudwatch_log_group" "canary" {
 #   - Logs: Apache access/error → /moodle/web; PHP error log +
 #     Moodle log → /moodle/app; syslog/fail2ban → /moodle/system
 # ---------------------------------------------------------------------
-#checkov:skip=CKV2_AWS_34: SSM type = "String" not "SecureString". CW Agent config has no secrets — only metric paths and log group names. SecureString would require kms:Decrypt on the EC2 instance role for zero security benefit.
+#checkov:skip=CKV2_AWS_34: SSM type = "String" not "SecureString". CW Agent config has no secrets - only metric paths and log group names. SecureString would require kms:Decrypt on the EC2 instance role for zero security benefit.
 resource "aws_ssm_parameter" "cloudwatch_agent_config" {
   name        = "/moodle/cloudwatch-agent/config"
   description = "CloudWatch Agent JSON configuration for Moodle EC2 instance. Consumed by user-data on first boot."
