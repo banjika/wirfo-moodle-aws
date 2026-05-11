@@ -7,13 +7,13 @@
 - Before a planned major workload change (verify recoverability first)
 
 **Preconditions:**
-- First workload apply completed (T-029) — RDS automated backups enabled, AWS Backup vault `moodle` active
+- First workload apply completed (T-029) — RDS automated backups enabled, AWS Backup vault `moodle-academy-pilot-moodle-backup-vault` active
 - Operator has SSM Session Manager access to the EC2 instance
 - At least one automated RDS snapshot exists (backups run nightly; allow 24h after first apply)
 - 60–90 minutes available uninterrupted
 
 **Estimated time:** 30–60 minutes (both parts combined)
-**Last updated:** 2026-05-09
+**Last updated:** 2026-05-11 (T-031 first drill execution)
 
 ---
 
@@ -83,7 +83,8 @@ RESTORE_HOST=$(aws rds describe-db-instances \
   --query 'DBInstances[0].Endpoint.Address' \
   --output text)
 psql -h "$RESTORE_HOST" -U moodle_admin -d moodle -c 'SELECT count(*) FROM mdl_user;'
-# Enter DB password from Secrets Manager: aws secretsmanager get-secret-value --secret-id moodle/db --region eu-west-1
+# Enter DB password from Secrets Manager (returns JSON with username + password):
+# aws secretsmanager get-secret-value --secret-id moodle/db/master --region eu-west-1 --query SecretString --output text
 ```
 
 Expected: row count matches production (check production with the same query against the live endpoint).
@@ -114,7 +115,7 @@ aws rds describe-db-instances \
 
 ```bash
 aws backup list-recovery-points-by-backup-vault \
-  --backup-vault-name moodle \
+  --backup-vault-name moodle-academy-pilot-moodle-backup-vault \
   --region eu-west-1 \
   --query 'reverse(sort_by(RecoveryPoints, &CreationDate))[0].{ARN:RecoveryPointArn,Date:CreationDate,Status:Status}'
 ```
@@ -148,7 +149,7 @@ aws backup start-restore-job \
   --region eu-west-1
 ```
 
-> `<aws_backup_role_arn>` — from: `terraform -chdir=terraform/environments/pilot output` (observability or storage module output).
+> `<aws_backup_role_arn>` — known ARN: `arn:aws:iam::288761747885:role/moodle-academy-pilot-aws-backup-role` (also visible in recovery point details from B1's output, field `IamRoleArn`).
 
 Record the `RestoreJobId` from the response.
 
@@ -172,7 +173,7 @@ aws ssm start-session --target <instance-id> --region eu-west-1
 In the session:
 ```bash
 sudo mkdir /mnt/restore-test
-sudo mount -t efs -o tls <new-efs-id>:/ /mnt/restore-test
+sudo mount -t efs -o tls,iam <new-efs-id>:/ /mnt/restore-test
 ls /mnt/restore-test
 # Verify file structure matches /var/moodledata (moodledata directory, filedir/, etc.)
 ```
