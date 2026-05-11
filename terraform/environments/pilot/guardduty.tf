@@ -1,4 +1,4 @@
-# GuardDuty account-wide threat detection — one detector per opted-in region.
+# GuardDuty account-wide threat detection - one detector per opted-in region.
 #
 # Terraform requires statically declared provider configurations; provider
 # aliases cannot be constructed dynamically inside for_each (static-provider
@@ -15,15 +15,15 @@
 # root instead. The observability module is unchanged structurally.
 
 # Suppression rationale for all 17 aws_guardduty_detector resources below:
-#   CKV2_AWS_58 — S3 protection uses account default; explicit enablement via
+#   CKV2_AWS_58 - S3 protection uses account default; explicit enablement via
 #                 datasources block requires one aws_guardduty_detector_feature
 #                 resource per region (17 extra). Phase 2 via delegated admin.
-#   CKV2_AWS_3  — Rule wants GuardDuty wired to an AWS Organizations delegated
+#   CKV2_AWS_3  - Rule wants GuardDuty wired to an AWS Organizations delegated
 #                 admin. Phase 1 is single-account; no AWS Organizations.
 #                 Org-level GuardDuty is a Phase 2 multi-account concern
 #                 per design.md §2.8.
-#checkov:skip=CKV2_AWS_58: see suppression rationale above — applies to all 17 detectors.
-#checkov:skip=CKV2_AWS_3: see suppression rationale above — applies to all 17 detectors.
+#checkov:skip=CKV2_AWS_58: see suppression rationale above - applies to all 17 detectors.
+#checkov:skip=CKV2_AWS_3: see suppression rationale above - applies to all 17 detectors.
 resource "aws_guardduty_detector" "eu_west_1" {
   count  = var.enable_guardduty ? 1 : 0
   enable = true

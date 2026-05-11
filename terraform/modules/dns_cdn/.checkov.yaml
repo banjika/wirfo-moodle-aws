@@ -5,10 +5,10 @@
 # (established in T-004); this file is the operational suppression mechanism.
 
 skip-check:
-  - CKV_AWS_68    # CloudFront WAF — Phase 2 deferral per design.md §10.1. WAF managed rule sets attach to CloudFront in Phase 2 alongside payment gateway integration.
-  - CKV_AWS_86    # CloudFront access logging — Phase 1 cost stance per design.md §2.7. Logging omitted to keep cost down. Phase 2 may add S3 logging when WAF analytics need it.
-  - CKV_AWS_305   # CloudFront default root object — intentionally empty. Moodle handles URL routing; setting "index.php" breaks /login/index.php, /course/view.php, etc.
-  - CKV_AWS_310   # CloudFront origin failover — single EC2 origin in Phase 1. Phase 3 introduces ALB and HA per design.md §10.1.
-  - CKV_AWS_374   # CloudFront geo restriction — no geo-blocking in Phase 1 per CLAUDE.md hard rule #5. Phase 2 BNR REG 89/2025 may add country-based pricing variation, not geo-blocking.
-  - CKV2_AWS_32   # CloudFront response headers policy — not in Phase 1 scope. Phase 2 may add HSTS/CSP security headers policy for production hardening.
-  - CKV2_AWS_47   # CloudFront WAFv2 Log4j AMR — requires WAF attachment; deferred to Phase 2 with CKV_AWS_68.
+  - CKV_AWS_68    # CloudFront WAF - Phase 2 deferral per design.md §10.1. WAF managed rule sets attach to CloudFront in Phase 2 alongside payment gateway integration.
+  - CKV_AWS_86    # CloudFront access logging - Phase 1 cost stance per design.md §2.7. Logging omitted to keep cost down. Phase 2 may add S3 logging when WAF analytics need it.
+  - CKV_AWS_305   # CloudFront default root object - intentionally empty. Moodle handles URL routing; setting "index.php" breaks /login/index.php, /course/view.php, etc.
+  - CKV_AWS_310   # CloudFront origin failover - single EC2 origin in Phase 1. Phase 3 introduces ALB and HA per design.md §10.1.
+  - CKV_AWS_374   # CloudFront geo restriction - no geo-blocking in Phase 1 per CLAUDE.md hard rule #5. Phase 2 BNR REG 89/2025 may add country-based pricing variation, not geo-blocking.
+  - CKV2_AWS_32   # CloudFront response headers policy - not in Phase 1 scope. Phase 2 may add HSTS/CSP security headers policy for production hardening.
+  - CKV2_AWS_47   # CloudFront WAFv2 Log4j AMR - requires WAF attachment; deferred to Phase 2 with CKV_AWS_68.

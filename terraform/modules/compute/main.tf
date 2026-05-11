@@ -18,14 +18,14 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# Phase 1: EC2 in public subnet with EIP — no NAT Gateway (CLAUDE.md hard rule #1).
+# Phase 1: EC2 in public subnet with EIP - no NAT Gateway (CLAUDE.md hard rule #1).
 # Web SG ingress is restricted to the CloudFront origin-facing prefix list (T-011);
-# admin access is via SSM Session Manager only — no SSH, no key pair (CLAUDE.md hard rule #6).
+# admin access is via SSM Session Manager only - no SSH, no key pair (CLAUDE.md hard rule #6).
 # Phase 3 moves EC2 behind ALB into private subnets.
 # Phase 1 cost stance: basic 5-minute monitoring is sufficient per requirements §6.
 # CloudWatch Agent (T-022) provides 1-minute app-level metrics.
-#checkov:skip=CKV_AWS_88: Phase 1 EC2 in public subnet with EIP — no NAT Gateway per CLAUDE.md hard rule #1. Web SG ingress restricted to CloudFront prefix list (T-011); admin via SSM only (hard rule #6). Phase 3 moves EC2 behind ALB into private subnets.
-#checkov:skip=CKV_AWS_126: Phase 1 cost stance per requirements §6 — basic 5-minute monitoring sufficient. CloudWatch Agent (T-022) provides 1-minute app-level metrics.
+#checkov:skip=CKV_AWS_88: Phase 1 EC2 in public subnet with EIP - no NAT Gateway per CLAUDE.md hard rule #1. Web SG ingress restricted to CloudFront prefix list (T-011); admin via SSM only (hard rule #6). Phase 3 moves EC2 behind ALB into private subnets.
+#checkov:skip=CKV_AWS_126: Phase 1 cost stance per requirements §6 - basic 5-minute monitoring sufficient. CloudWatch Agent (T-022) provides 1-minute app-level metrics.
 resource "aws_instance" "moodle" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.instance_type
@@ -33,7 +33,7 @@ resource "aws_instance" "moodle" {
   vpc_security_group_ids      = [var.web_sg_id]
   iam_instance_profile        = var.ec2_instance_profile_name
   associate_public_ip_address = true
-  # Required: EC2 is in a public subnet (CLAUDE.md hard rule #1 — no NAT).
+  # Required: EC2 is in a public subnet (CLAUDE.md hard rule #1 - no NAT).
   # EIP attaches after instance creation; the auto-assigned IP is superseded by the EIP.
 
   user_data = templatefile("${path.module}/templates/user_data.sh.tftpl", {
@@ -59,7 +59,7 @@ resource "aws_instance" "moodle" {
     volume_size = var.root_volume_gb
     encrypted   = true
     kms_key_id  = null
-    # Explicit null — uses aws/ebs default key per CLAUDE.md hard rule #3 (no CMK in Phase 1).
+    # Explicit null - uses aws/ebs default key per CLAUDE.md hard rule #3 (no CMK in Phase 1).
     delete_on_termination = true
 
     tags = {
@@ -69,7 +69,7 @@ resource "aws_instance" "moodle" {
 
   metadata_options {
     http_tokens = "required"
-    # IMDSv2 required — defence-in-depth for SSRF (CLAUDE.md security baseline).
+    # IMDSv2 required - defence-in-depth for SSRF (CLAUDE.md security baseline).
     http_put_response_hop_limit = 1
     # Hop limit of 1 prevents containers/processes from querying IMDS on behalf of attackers.
     http_endpoint = "enabled"

@@ -4,6 +4,6 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 data "aws_route53_zone" "main" {
-  # Trailing dot is intentional — canonical fully-qualified DNS form.
+  # Trailing dot is intentional - canonical fully-qualified DNS form.
   name = "wirfoncloud.com."
 }

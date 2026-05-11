@@ -16,7 +16,7 @@ resource "aws_iam_role" "deploy" {
           }
           StringLike = {
             # StringLike (not StringEquals) because sub ends with :* wildcard.
-            # Phase 1 simplification per design.md §5 note 1 — Phase 2 tightens to specific refs.
+            # Phase 1 simplification per design.md §5 note 1 - Phase 2 tightens to specific refs.
             "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
           }
         }
@@ -213,7 +213,7 @@ resource "aws_iam_role_policy" "deploy" {
           "arn:aws:s3:::wirfo-moodle-tfstate-${data.aws_caller_identity.current.account_id}/*",
           "arn:aws:s3:::wirfo-moodle-cloudtrail-${data.aws_caller_identity.current.account_id}",
           "arn:aws:s3:::wirfo-moodle-cloudtrail-${data.aws_caller_identity.current.account_id}/*",
-          # T-024 canary-artifacts bucket — synthetics module needs S3 reads on plan refresh.
+          # T-024 canary-artifacts bucket - synthetics module needs S3 reads on plan refresh.
           "arn:aws:s3:::moodle-academy-pilot-canary-${data.aws_caller_identity.current.account_id}",
           "arn:aws:s3:::moodle-academy-pilot-canary-${data.aws_caller_identity.current.account_id}/*",
         ]

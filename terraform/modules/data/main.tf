@@ -62,15 +62,15 @@ resource "aws_db_instance" "rds" {
   storage_type          = "gp3"
   storage_encrypted     = true
   kms_key_id            = null
-  # Explicit null — uses aws/rds default key per CLAUDE.md hard rule #3 (no CMK in Phase 1)
+  # Explicit null - uses aws/rds default key per CLAUDE.md hard rule #3 (no CMK in Phase 1)
 
   db_subnet_group_name   = aws_db_subnet_group.rds.name
   parameter_group_name   = aws_db_parameter_group.rds.name
   vpc_security_group_ids = [var.db_sg_id]
 
   multi_az = false
-  # CLAUDE.md hard rule #2 — single-AZ. RDS picks the active AZ from the subnet group at creation.
-  # availability_zone intentionally omitted — AZ pinning would conflict with Phase 3 Multi-AZ enable.
+  # CLAUDE.md hard rule #2 - single-AZ. RDS picks the active AZ from the subnet group at creation.
+  # availability_zone intentionally omitted - AZ pinning would conflict with Phase 3 Multi-AZ enable.
 
   publicly_accessible = false
   # NEVER public. RDS lives in private subnets behind the SG-to-SG rules from T-011.
@@ -85,7 +85,7 @@ resource "aws_db_instance" "rds" {
   deletion_protection       = true
   skip_final_snapshot       = false
   final_snapshot_identifier = "${var.project_name}-${var.environment}-rds-final"
-  # Static identifier — no timestamp() to avoid a forced plan diff on every run.
+  # Static identifier - no timestamp() to avoid a forced plan diff on every run.
   copy_tags_to_snapshot = true
 
   backup_retention_period = var.db_backup_retention_days

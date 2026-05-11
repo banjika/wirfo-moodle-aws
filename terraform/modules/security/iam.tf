@@ -47,7 +47,7 @@ resource "aws_iam_role_policy" "moodle_ec2_secrets" {
   })
 }
 
-#tfsec:ignore:aws-iam-no-policy-wildcards Resource=* is required for SES SendEmail; the Condition (ses:FromAddress *@wirfoncloud.com) is the access constraint. Same false-positive family as T-010/T-011 — scanner pattern check does not inspect Condition blocks.
+#tfsec:ignore:aws-iam-no-policy-wildcards Resource=* is required for SES SendEmail; the Condition (ses:FromAddress *@wirfoncloud.com) is the access constraint. Same false-positive family as T-010/T-011 - scanner pattern check does not inspect Condition blocks.
 resource "aws_iam_role_policy" "moodle_ec2_ses" {
   name = "ses-send"
   role = aws_iam_role.moodle_ec2.id
@@ -67,7 +67,7 @@ resource "aws_iam_role_policy" "moodle_ec2_ses" {
   })
 }
 
-#tfsec:ignore:aws-iam-no-policy-wildcards Resource=* is required for AWS-managed KMS keys (aws/secretsmanager, aws/rds) whose ARNs the account does not control; access restricted by kms:ViaService condition. Same false-positive family as T-010/T-011 — scanner pattern check does not inspect Condition blocks.
+#tfsec:ignore:aws-iam-no-policy-wildcards Resource=* is required for AWS-managed KMS keys (aws/secretsmanager, aws/rds) whose ARNs the account does not control; access restricted by kms:ViaService condition. Same false-positive family as T-010/T-011 - scanner pattern check does not inspect Condition blocks.
 resource "aws_iam_role_policy" "moodle_ec2_kms" {
   name = "kms-decrypt-via-service"
   role = aws_iam_role.moodle_ec2.id
@@ -90,7 +90,7 @@ resource "aws_iam_role_policy" "moodle_ec2_kms" {
   })
 }
 
-#tfsec:ignore:aws-iam-no-policy-wildcards Resource=* is required for CloudWatch PutMetricData; access restricted to Moodle/* sub-namespaces via cloudwatch:namespace StringLike condition. Same false-positive family as T-010/T-011 — scanner pattern check does not inspect Condition blocks.
+#tfsec:ignore:aws-iam-no-policy-wildcards Resource=* is required for CloudWatch PutMetricData; access restricted to Moodle/* sub-namespaces via cloudwatch:namespace StringLike condition. Same false-positive family as T-010/T-011 - scanner pattern check does not inspect Condition blocks.
 resource "aws_iam_role_policy" "moodle_ec2_cw_metrics" {
   name = "cw-metrics-moodle-namespace"
   role = aws_iam_role.moodle_ec2.id

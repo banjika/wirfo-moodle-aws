@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# CloudFront origin-facing prefix list — used for web_sg ingress.
+# CloudFront origin-facing prefix list - used for web_sg ingress.
 # Looked up by name so no hardcoded pl-* IDs cross region boundaries.
 # --------------------------------------------------------------------------
 data "aws_ec2_managed_prefix_list" "cloudfront_origin" {
@@ -142,7 +142,7 @@ resource "aws_vpc_security_group_ingress_rule" "efs_nfs_from_web" {
 }
 
 # --------------------------------------------------------------------------
-# Egress rules — web_sg only (7 total; other SGs have egress = [])
+# Egress rules - web_sg only (7 total; other SGs have egress = [])
 # TCP 443 and TCP 587 each split into IPv4 + IPv6 because
 # aws_vpc_security_group_egress_rule accepts only one of cidr_ipv4/cidr_ipv6.
 # --------------------------------------------------------------------------

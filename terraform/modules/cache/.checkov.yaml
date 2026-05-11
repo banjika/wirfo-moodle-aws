@@ -6,4 +6,4 @@
 
 skip-check:
   - CKV_AWS_191   # ElastiCache replication group uses aws/elasticache default key; no CMK in Phase 1 per CLAUDE.md hard rule #3. CMK deferred to Phase 2.
-  - CKV2_AWS_50   # Multi-AZ Automatic Failover disabled — Phase 1 single-AZ per CLAUDE.md hard rule #2; automatic_failover_enabled=false required when replicas_per_node_group=0. Phase 3 enables HA.
+  - CKV2_AWS_50   # Multi-AZ Automatic Failover disabled - Phase 1 single-AZ per CLAUDE.md hard rule #2; automatic_failover_enabled=false required when replicas_per_node_group=0. Phase 3 enables HA.

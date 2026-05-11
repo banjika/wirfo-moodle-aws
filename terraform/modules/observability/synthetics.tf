@@ -7,7 +7,7 @@ data "archive_file" "canary" {
 }
 
 # IAM role for the AWS Synthetics canary.
-# Trust is on lambda.amazonaws.com — Synthetics runs canaries as managed Lambda
+# Trust is on lambda.amazonaws.com - Synthetics runs canaries as managed Lambda
 # functions; using synthetics.amazonaws.com is a common mistake that prevents
 # the canary role assumption.
 resource "aws_iam_role" "canary" {
@@ -80,9 +80,9 @@ resource "aws_iam_role_policy" "canary" {
 # Bucket name includes account ID for global uniqueness.
 # Phase 1 cost stance: no access logging (writes are internal, audited via
 # CloudTrail) and no cross-region replication (ephemeral 30-day artifacts).
-#checkov:skip=CKV_AWS_18: Phase 1 cost stance — access logs only meaningful at production scale; canary writes are internal/audited via CloudTrail.
+#checkov:skip=CKV_AWS_18: Phase 1 cost stance - access logs only meaningful at production scale; canary writes are internal/audited via CloudTrail.
 #checkov:skip=CKV_AWS_144: Phase 1 single-region; canary artifacts are ephemeral (30-day expiry); no DR concern.
-#checkov:skip=CKV_AWS_145: Phase 1 hard rule #3 — no CMKs. Bucket uses SSE-S3 (AES256). Phase 2 may add CMK.
+#checkov:skip=CKV_AWS_145: Phase 1 hard rule #3 - no CMKs. Bucket uses SSE-S3 (AES256). Phase 2 may add CMK.
 #checkov:skip=CKV2_AWS_62: Canary artifacts bucket is internal write-only storage; event notifications add no value at Phase 1 scale.
 #tfsec:ignore:aws-s3-enable-bucket-logging
 resource "aws_s3_bucket" "canary_artifacts" {
@@ -101,7 +101,7 @@ resource "aws_s3_bucket_versioning" "canary_artifacts" {
   }
 }
 
-# SSE-S3 (AES256) — no CMK per Phase 1 hard rule #3.
+# SSE-S3 (AES256) - no CMK per Phase 1 hard rule #3.
 #tfsec:ignore:aws-s3-encryption-customer-key
 resource "aws_s3_bucket_server_side_encryption_configuration" "canary_artifacts" {
   bucket = aws_s3_bucket.canary_artifacts.id
@@ -158,7 +158,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "canary_artifacts" {
 }
 
 # Canary name is capped at 21 characters (AWS Synthetics hard limit).
-# "${var.project_name}-${var.environment}-moodle-login" = 33 chars with defaults —
+# "${var.project_name}-${var.environment}-moodle-login" = 33 chars with defaults -
 # too long. "${var.environment}-moodle-login" = 18 chars with default "pilot". Fits cleanly.
 #checkov:skip=CKV_AWS_117: aws_synthetics_canary is AWS-managed Lambda; VPC config is not applicable to this resource type.
 resource "aws_synthetics_canary" "moodle_login" {

@@ -10,7 +10,7 @@ variable "environment" {
 
 variable "efs_subnet_id" {
   type        = string
-  description = "Private subnet ID for the EFS mount target ENI. SINGULAR — Phase 1 uses AZ-a only per CLAUDE.md hard rule #2. Phase 3 adds a second mount target in AZ-b without modifying this variable."
+  description = "Private subnet ID for the EFS mount target ENI. SINGULAR - Phase 1 uses AZ-a only per CLAUDE.md hard rule #2. Phase 3 adds a second mount target in AZ-b without modifying this variable."
 
   validation {
     condition     = startswith(var.efs_subnet_id, "subnet-")
@@ -30,7 +30,7 @@ variable "efs_sg_id" {
 
 variable "efs_throughput_mode" {
   type        = string
-  description = "EFS throughput mode. 'bursting' in Phase 1 — cheaper than 'elastic' at low traffic (requirements §6)."
+  description = "EFS throughput mode. 'bursting' in Phase 1 - cheaper than 'elastic' at low traffic (requirements §6)."
 
   validation {
     condition     = contains(["bursting", "provisioned", "elastic"], var.efs_throughput_mode)

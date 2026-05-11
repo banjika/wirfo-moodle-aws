@@ -70,7 +70,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_status_check_failed" {
   ok_actions    = local.ok_actions
 }
 
-# 4: Disk > 85% — CW Agent custom metric (namespace Moodle/<env>).
+# 4: Disk > 85% - CW Agent custom metric (namespace Moodle/<env>).
 # Missing data = breaching: no CW Agent data means the agent may have stopped.
 resource "aws_cloudwatch_metric_alarm" "ec2_disk_high" {
   alarm_name          = "${var.project_name}-${var.environment}-ec2-disk-high"
@@ -159,7 +159,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_high" {
 }
 
 # 8: ElastiCache evictions > 0.
-# Any eviction signals memory pressure — cache.t4g.micro has 500 MB;
+# Any eviction signals memory pressure - cache.t4g.micro has 500 MB;
 # sustained evictions degrade Moodle session and MUC performance.
 resource "aws_cloudwatch_metric_alarm" "cache_evictions" {
   alarm_name          = "${var.project_name}-${var.environment}-cache-evictions"

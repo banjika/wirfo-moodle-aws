@@ -132,7 +132,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "cloudtrail" {
       noncurrent_days = 90
     }
 
-    # Filter required by the schema — empty {} matches all objects
+    # Filter required by the schema - empty {} matches all objects
     filter {}
   }
 }

@@ -1,15 +1,15 @@
 data "aws_route53_zone" "main" {
   name = "wirfoncloud.com."
-  # Trailing dot is intentional — fully-qualified zone name reduces lookup ambiguity.
+  # Trailing dot is intentional - fully-qualified zone name reduces lookup ambiguity.
   private_zone = false
-  # Explicit — only one public zone for wirfoncloud.com exists in this account.
+  # Explicit - only one public zone for wirfoncloud.com exists in this account.
 }
 
 data "aws_acm_certificate" "cloudfront" {
   provider = aws.us_east_1
   domain   = var.domain_name
   statuses = ["ISSUED"]
-  # Filters out PENDING_VALIDATION certs — CloudFront requires a fully issued cert.
+  # Filters out PENDING_VALIDATION certs - CloudFront requires a fully issued cert.
   most_recent = true
 }
 
@@ -20,20 +20,20 @@ data "aws_acm_certificate" "cloudfront" {
 # Phase 1: geo restriction = none (Phase 2 BNR REG 89/2025 may add pricing variation, not geo-blocking).
 # Phase 1: no response headers policy (Phase 2 may add HSTS/CSP hardening for production).
 # origin_protocol_policy = "http-only": EC2 origin has no TLS cert; viewer HTTPS enforced by redirect-to-https.
-# default_root_object = "": Moodle handles URL routing — empty lets /login/index.php, /course/view.php, etc. work.
-#checkov:skip=CKV_AWS_68: Phase 2 deferral — WAF managed rule sets attach to CloudFront in Phase 2 alongside payment gateway integration per design.md §10.1.
-#checkov:skip=CKV_AWS_86: Phase 1 cost stance per design.md §2.7 — logging omitted to keep cost down. Phase 2 may add S3 logging when WAF analytics need it.
-#checkov:skip=CKV_AWS_305: Moodle handles URL routing — empty default_root_object lets /login/index.php, /course/view.php, etc. work. Setting "index.php" breaks Moodle routing.
-#checkov:skip=CKV_AWS_310: Single EC2 origin in Phase 1 — no failover origin. Phase 3 introduces ALB and HA per design.md §10.1.
+# default_root_object = "": Moodle handles URL routing - empty lets /login/index.php, /course/view.php, etc. work.
+#checkov:skip=CKV_AWS_68: Phase 2 deferral - WAF managed rule sets attach to CloudFront in Phase 2 alongside payment gateway integration per design.md §10.1.
+#checkov:skip=CKV_AWS_86: Phase 1 cost stance per design.md §2.7 - logging omitted to keep cost down. Phase 2 may add S3 logging when WAF analytics need it.
+#checkov:skip=CKV_AWS_305: Moodle handles URL routing - empty default_root_object lets /login/index.php, /course/view.php, etc. work. Setting "index.php" breaks Moodle routing.
+#checkov:skip=CKV_AWS_310: Single EC2 origin in Phase 1 - no failover origin. Phase 3 introduces ALB and HA per design.md §10.1.
 #checkov:skip=CKV_AWS_374: No geo-blocking in Phase 1 per CLAUDE.md hard rule #5. Phase 2 BNR REG 89/2025 may add country-based pricing variation, not geo-blocking.
 #checkov:skip=CKV2_AWS_32: No response headers policy in Phase 1. Phase 2 may add HSTS/CSP security headers policy for production hardening.
-#checkov:skip=CKV2_AWS_47: WAFv2 Log4j AMR requires WAF attachment — deferred to Phase 2 with CKV_AWS_68.
+#checkov:skip=CKV2_AWS_47: WAFv2 Log4j AMR requires WAF attachment - deferred to Phase 2 with CKV_AWS_68.
 #tfsec:ignore:aws-cloudfront-enable-waf
 #tfsec:ignore:aws-cloudfront-enable-logging
 resource "aws_cloudfront_distribution" "moodle" {
   enabled         = true
   is_ipv6_enabled = true
-  # Dual-stack — CloudFront serves over both IPv4 and IPv6.
+  # Dual-stack - CloudFront serves over both IPv4 and IPv6.
   comment             = "Moodle Academy - Phase 1 single-instance origin"
   aliases             = [var.domain_name]
   default_root_object = ""
@@ -77,7 +77,7 @@ resource "aws_cloudfront_distribution" "moodle" {
     target_origin_id       = "moodle-ec2-origin"
     viewer_protocol_policy = "redirect-to-https"
     allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
-    # Moodle uses POST for form submissions — all methods must be allowed.
+    # Moodle uses POST for form submissions - all methods must be allowed.
     cached_methods = ["GET", "HEAD"]
     compress       = true
 
@@ -89,7 +89,7 @@ resource "aws_cloudfront_distribution" "moodle" {
     # AWS-managed Managed-AllViewer. Forwards Host + ALL query strings + ALL cookies.
     # Critical for Moodle wwwroot consistency (design.md §2.7): Apache UseCanonicalName On
     # needs the Host header to build correct absolute URLs. DO NOT switch to
-    # Managed-AllViewerExceptHostHeader — that strips Host and breaks Moodle links.
+    # Managed-AllViewerExceptHostHeader - that strips Host and breaks Moodle links.
   }
 
   ordered_cache_behavior {
@@ -101,11 +101,11 @@ resource "aws_cloudfront_distribution" "moodle" {
     compress               = true
 
     cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"
-    # AWS-managed Managed-CachingOptimized — aggressive caching for static assets
+    # AWS-managed Managed-CachingOptimized - aggressive caching for static assets
     # (Rwanda latency mitigation per design.md §2.7 and requirements §4.2).
 
     origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3"
-    # Managed-AllViewer — same as default behavior for Host header consistency.
+    # Managed-AllViewer - same as default behavior for Host header consistency.
   }
 
   ordered_cache_behavior {
@@ -163,7 +163,7 @@ resource "aws_cloudfront_distribution" "moodle" {
   lifecycle {
     prevent_destroy = false
     # CloudFront is a routing layer with no stateful data. The underlying data lives
-    # at the EC2 origin / RDS / EFS — all of which have their own prevent_destroy.
+    # at the EC2 origin / RDS / EFS - all of which have their own prevent_destroy.
     # Replacing CloudFront has no data implications.
   }
 }

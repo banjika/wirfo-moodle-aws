@@ -55,7 +55,7 @@ variable "db_engine_version" {
 
 variable "db_backup_retention_days" {
   type        = number
-  description = "Automated backup retention period (days). Must be 1–35."
+  description = "Automated backup retention period (days). Must be 1-35."
 
   validation {
     condition     = var.db_backup_retention_days >= 1 && var.db_backup_retention_days <= 35

@@ -35,5 +35,5 @@ variable "cache_node_type" {
 
 variable "cache_engine_version" {
   type        = string
-  description = "Valkey engine version string with dot (e.g. '7.2'). Note: the parameter group family uses a different format ('valkey7', no dot — see main.tf comment)."
+  description = "Valkey engine version string with dot (e.g. '7.2'). Note: the parameter group family uses a different format ('valkey7', no dot - see main.tf comment)."
 }

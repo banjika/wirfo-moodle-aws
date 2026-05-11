@@ -39,7 +39,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_status_check" {
     # like recover, stop, terminate, reboot.
   ]
 
-  # No SNS notification action in P1 — the recovery happens
+  # No SNS notification action in P1 - the recovery happens
   # automatically without operator intervention. T-022 may add a
   # parallel SNS notification for awareness, but the recovery
   # action itself doesn't need it.
