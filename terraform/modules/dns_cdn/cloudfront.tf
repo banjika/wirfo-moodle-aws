@@ -13,6 +13,38 @@ data "aws_acm_certificate" "cloudfront" {
   most_recent = true
 }
 
+# Custom cache policy: like AWS-managed Managed-CachingOptimized but with
+# query_string_behavior = "all" instead of "none". Required because Moodle's
+# yui_combo.php serves different content based on query string (e.g., the
+# same script returns CSS for ?rollup/.../min.css vs JS for ?rollup/.../min.js).
+# Without query strings in the cache key, the two URLs collapse to a single
+# cache entry and whichever request hits first wins, returning the wrong
+# Content-Type for the other. See post-mortem 2026-05-11 (CSS MIME bug).
+resource "aws_cloudfront_cache_policy" "static_with_query" {
+  name        = "${var.project_name}-${var.environment}-static-with-query"
+  comment     = "Static-asset caching with full query string in cache key (Moodle yui_combo.php)"
+  default_ttl = 86400
+  max_ttl     = 31536000
+  min_ttl     = 1
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    enable_accept_encoding_gzip   = true
+    enable_accept_encoding_brotli = true
+
+    headers_config {
+      header_behavior = "none"
+    }
+
+    cookies_config {
+      cookie_behavior = "none"
+    }
+
+    query_strings_config {
+      query_string_behavior = "all"
+    }
+  }
+}
+
 # CloudFront distribution for Moodle Academy.
 # Phase 1: no WAF web ACL (deferred to Phase 2 alongside payment gateway integration per design.md §10.1).
 # Phase 1: no access logging (cost stance per design.md §2.7; Phase 2 may add S3 logging when WAF analytics need it).
@@ -100,9 +132,10 @@ resource "aws_cloudfront_distribution" "moodle" {
     cached_methods         = ["GET", "HEAD"]
     compress               = true
 
-    cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"
-    # AWS-managed Managed-CachingOptimized - aggressive caching for static assets
-    # (Rwanda latency mitigation per design.md §2.7 and requirements §4.2).
+    cache_policy_id = aws_cloudfront_cache_policy.static_with_query.id
+    # Custom cache policy (static_with_query) - aggressive caching with full
+    # query string in cache key (Rwanda latency mitigation per design.md §2.7
+    # and requirements §4.2; query strings required per post-mortem 2026-05-11).
 
     origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3"
     # Managed-AllViewer - same as default behavior for Host header consistency.
@@ -116,7 +149,7 @@ resource "aws_cloudfront_distribution" "moodle" {
     cached_methods         = ["GET", "HEAD"]
     compress               = true
 
-    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    cache_policy_id          = aws_cloudfront_cache_policy.static_with_query.id
     origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3"
   }
 
@@ -148,7 +181,7 @@ resource "aws_cloudfront_distribution" "moodle" {
     cached_methods         = ["GET", "HEAD"]
     compress               = true
 
-    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    cache_policy_id          = aws_cloudfront_cache_policy.static_with_query.id
     origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3"
   }
 
@@ -160,7 +193,7 @@ resource "aws_cloudfront_distribution" "moodle" {
     cached_methods         = ["GET", "HEAD"]
     compress               = true
 
-    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    cache_policy_id          = aws_cloudfront_cache_policy.static_with_query.id
     origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3"
   }
 
@@ -172,7 +205,7 @@ resource "aws_cloudfront_distribution" "moodle" {
     cached_methods         = ["GET", "HEAD"]
     compress               = true
 
-    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    cache_policy_id          = aws_cloudfront_cache_policy.static_with_query.id
     origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3"
   }
 
