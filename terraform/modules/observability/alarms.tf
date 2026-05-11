@@ -71,7 +71,10 @@ resource "aws_cloudwatch_metric_alarm" "ec2_status_check_failed" {
 }
 
 # 4: Disk > 85% - CW Agent custom metric (namespace Moodle/<env>).
-# Missing data = breaching: no CW Agent data means the agent may have stopped.
+# Missing data = notBreaching: this metric is agent-published (not AWS-managed like CPU),
+# so transient gaps from agent restarts, deploys, or pending config wiring (T-022 SSM-based
+# config not yet deployed) are common and don't indicate disk fullness. An actual full disk
+# produces a specific high-utilization datapoint that fires the alarm via the threshold path.
 resource "aws_cloudwatch_metric_alarm" "ec2_disk_high" {
   alarm_name          = "${var.project_name}-${var.environment}-ec2-disk-high"
   alarm_description   = "Root disk utilization above 85%."
@@ -82,7 +85,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_disk_high" {
   period              = 300
   statistic           = "Average"
   threshold           = 85
-  treat_missing_data  = "breaching"
+  treat_missing_data  = "notBreaching"
 
   dimensions = {
     path = "/"
