@@ -1,3 +1,4 @@
+# Workload root for Phase 1 Moodle stack. See modules/ for resource definitions.
 module "network" {
   source = "../../modules/network"
 
