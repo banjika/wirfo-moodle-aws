@@ -1,34 +1,35 @@
 # Restore Drill Runbook
 
-**Purpose:** Quarterly verification that RDS and EFS backups are restorable. Validates RTO (4h) and RPO (24h) claims from requirements §4.4.
+**Purpose:** Quarterly verification that RDS and EFS backups are restorable. Validates RTO (4h) and RPO (24h) claims from requirements section 4.4.
+
 **When to use:**
-- Quarterly (per requirements §8.4)
+- Quarterly (per requirements section 8.4)
 - After any change to backup configuration
 - Before a planned major workload change (verify recoverability first)
 
 **Preconditions:**
-- First workload apply completed (T-029) — RDS automated backups enabled, AWS Backup vault `moodle-academy-pilot-moodle-backup-vault` active
+- First workload apply completed (T-029) - RDS automated backups enabled, AWS Backup vault `moodle-academy-pilot-moodle-backup-vault` active
 - Operator has SSM Session Manager access to the EC2 instance
 - At least one automated RDS snapshot exists (backups run nightly; allow 24h after first apply)
-- 60–90 minutes available uninterrupted
+- 30-60 minutes available uninterrupted (after applying T-031 corrections; first-time drill was ~57 min due to discovered bugs)
 
-**Estimated time:** 30–60 minutes (both parts combined)
-**Last updated:** 2026-05-11 (T-031 first drill execution)
+**Estimated time:** 30-60 minutes (both parts combined)
+**Last updated:** 2026-05-14 (T-031 first drill execution; 10 procedural corrections baked in)
 
 ---
 
-## Pass/fail criteria (requirements §4.4)
+## Pass/fail criteria (requirements section 4.4)
 
 | Metric | Target | Pass if |
 |---|---|---|
 | RTO | 4 hours | Wall clock from "start drill" to both artifacts verified queryable < 4h |
-| RPO | 24 hours | Restored snapshot is ≤ 24h old |
+| RPO | 24 hours | Restored snapshot is <= 24h old |
 
 **Record wall-clock start time before Part A, step 1.**
 
 ---
 
-## Part A — RDS snapshot restore (~15–30 min)
+## Part A - RDS snapshot restore (~10-15 min)
 
 ### A1. Identify latest automated snapshot
 
@@ -40,56 +41,80 @@ aws rds describe-db-snapshots \
   --query 'reverse(sort_by(DBSnapshots, &SnapshotCreateTime))[0].{ID:DBSnapshotIdentifier,Time:SnapshotCreateTime}'
 ```
 
-Record the snapshot ID and creation time. Verify the snapshot is ≤ 24h old (RPO check).
+Record the snapshot ID and creation time. Verify the snapshot is <= 24h old (RPO check).
 
-### A2. Restore as a separate instance
+### A2. Get the DB security group ID
+
+```bash
+aws ec2 describe-security-groups \
+  --filters "Name=group-name,Values=moodle-academy-pilot-db-sg" \
+  --region eu-west-1 \
+  --query "SecurityGroups[0].GroupId" --output text
+```
+
+### A3. Restore as a separate instance
 
 ```bash
 aws rds restore-db-instance-from-db-snapshot \
   --db-instance-identifier moodle-pg-restore-test \
   --db-snapshot-identifier <snapshot-id-from-A1> \
   --db-subnet-group-name moodle-academy-pilot-rds \
-  --vpc-security-group-ids <db_sg_id> \
+  --vpc-security-group-ids <db_sg_id-from-A2> \
   --no-publicly-accessible \
   --region eu-west-1
 ```
 
-> `<db_sg_id>` — retrieve from: `terraform -chdir=terraform/environments/pilot output` or AWS Console → EC2 → Security Groups → filter by `moodle-academy-pilot-db`.
+This creates a **separate instance** (`moodle-pg-restore-test`) - it does NOT overwrite production. Initial status `creating`; takes ~8-15 minutes to reach `available`.
 
-This creates a **separate instance** (`moodle-pg-restore-test`) — it does NOT overwrite production.
-
-### A3. Wait for "available"
+### A4. Wait for "available"
 
 ```bash
 aws rds describe-db-instances \
   --db-instance-identifier moodle-pg-restore-test \
   --region eu-west-1 \
-  --query 'DBInstances[0].DBInstanceStatus'
+  --query 'DBInstances[0].DBInstanceStatus' --output text
 ```
 
-Poll every 2 minutes until `"available"` (typically 10–15 min).
+Poll every 1-2 minutes. Progression: `creating` -> `backing-up` -> `available`.
 
-### A4. Verify queryable via EC2
+### A5. Verify queryable via EC2
+
+The production EC2 instance has the right VPC reachability and tools. SSM into it:
 
 ```bash
-aws ssm start-session --target <instance-id> --region eu-west-1
+aws ssm start-session --target <production-ec2-instance-id> --region eu-west-1
 ```
 
-In the session:
+In the SSM session:
+
 ```bash
+# Fetch password from Secrets Manager via env var (avoids copy/paste errors with special chars):
+export PGPASSWORD=$(aws secretsmanager get-secret-value --secret-id moodle/db/master --region eu-west-1 --query SecretString --output text | jq -r .password)
+echo "Password length: ${#PGPASSWORD}"   # Sanity check; expect ~32
+
+# Get the restore instance endpoint:
 RESTORE_HOST=$(aws rds describe-db-instances \
   --db-instance-identifier moodle-pg-restore-test \
   --region eu-west-1 \
-  --query 'DBInstances[0].Endpoint.Address' \
-  --output text)
-psql -h "$RESTORE_HOST" -U moodle_admin -d moodle -c 'SELECT count(*) FROM mdl_user;'
-# Enter DB password from Secrets Manager (returns JSON with username + password):
-# aws secretsmanager get-secret-value --secret-id moodle/db/master --region eu-west-1 --query SecretString --output text
+  --query 'DBInstances[0].Endpoint.Address' --output text)
+
+# Query with TLS required (server enforces rds.force_ssl=1):
+psql "host=$RESTORE_HOST user=moodle_admin dbname=moodle sslmode=require" \
+  -c 'SELECT count(*) FROM mdl_user;'
 ```
 
-Expected: row count matches production (check production with the same query against the live endpoint).
+Expected: row count matches production. For a pilot with admin + 1 manager account, count = 3 (guest + admin + your manager).
 
-### A5. DELETE the restore artifact (CRITICAL — prevents cost drift)
+Also worth checking the actual users:
+
+```bash
+psql "host=$RESTORE_HOST user=moodle_admin dbname=moodle sslmode=require" \
+  -c "SELECT id, username, firstname, lastname, email FROM mdl_user ORDER BY id;"
+```
+
+### A6. DELETE the restore artifact (CRITICAL - prevents cost drift)
+
+Exit SSM, back in your local PowerShell/terminal:
 
 ```bash
 aws rds delete-db-instance \
@@ -99,7 +124,8 @@ aws rds delete-db-instance \
   --region eu-west-1
 ```
 
-Confirm deletion (poll until instance disappears):
+Confirm deletion (after ~5 min):
+
 ```bash
 aws rds describe-db-instances \
   --db-instance-identifier moodle-pg-restore-test \
@@ -109,145 +135,215 @@ aws rds describe-db-instances \
 
 ---
 
-## Part B — EFS restore via AWS Backup (~15–20 min)
+## Part B - EFS restore via AWS Backup (~5-10 min)
 
-### B1. Identify latest recovery point
+### B1. Identify latest recovery point and source EFS ID
 
 ```bash
 aws backup list-recovery-points-by-backup-vault \
   --backup-vault-name moodle-academy-pilot-moodle-backup-vault \
   --region eu-west-1 \
-  --query 'reverse(sort_by(RecoveryPoints, &CreationDate))[0].{ARN:RecoveryPointArn,Date:CreationDate,Status:Status}'
+  --query 'reverse(sort_by(RecoveryPoints, &CreationDate))[0].{ARN:RecoveryPointArn,Date:CreationDate,Status:Status,Resource:ResourceArn}'
 ```
 
-Record the ARN and creation date. Verify status is `COMPLETED`.
+Record:
+- The `ARN` (RecoveryPointArn) - used in B3.
+- The source EFS ID from `Resource` (the part after `file-system/`) - used in B2.
+- Verify `Status` is `COMPLETED`.
 
-### B2. Write restore metadata
+### B2. Get the AWS-managed KMS key for EFS
 
 ```bash
-cat > /tmp/efs-restore-metadata.json << 'EOF'
+aws kms describe-key \
+  --key-id alias/aws/elasticfilesystem \
+  --region eu-west-1 \
+  --query "KeyMetadata.KeyId" --output text
+```
+
+Note this GUID. It will form the KmsKeyId in the restore metadata.
+
+### B3. Write restore metadata file
+
+The restore metadata must include **all five required keys** AWS Backup demands. Discovered during T-031:
+
+| Key | Required? | Value |
+|---|---|---|
+| `newFileSystem` | Yes | `"true"` |
+| `PerformanceMode` | Yes | `"generalPurpose"` |
+| `Encrypted` | Yes | `"true"` |
+| `CreationToken` | Yes | Unique string per drill (e.g., `restore-drill-YYYYMMDD-HHMM`) |
+| `file-system-id` | Yes | Source EFS ID from B1 (NOT the new restored ID) |
+| `KmsKeyId` | Yes (when `Encrypted=true`) | Full ARN of the KMS key from B2 |
+
+**On Linux/Mac:**
+
+```bash
+cat > /tmp/efs-restore-metadata.json <<EOF
 {
   "newFileSystem": "true",
   "PerformanceMode": "generalPurpose",
   "Encrypted": "true",
-  "CreationToken": "restore-drill-2026-05-09",
-  "newFileSystemEncrypted": "true"
+  "CreationToken": "restore-drill-$(date -u +%Y%m%d-%H%M)",
+  "file-system-id": "<source-fs-id-from-B1>",
+  "KmsKeyId": "arn:aws:kms:eu-west-1:<account-id>:key/<kms-key-id-from-B2>"
 }
 EOF
 ```
 
-Update `CreationToken` to today's date to ensure uniqueness.
+**On Windows PowerShell** (needed because PowerShell strips quotes when passing JSON inline to aws.exe):
 
-### B3. Start restore job
+```powershell
+$today = Get-Date -Format "yyyyMMdd-HHmm"
+$metadata = @{
+    "newFileSystem"    = "true"
+    "PerformanceMode"  = "generalPurpose"
+    "Encrypted"        = "true"
+    "CreationToken"    = "restore-drill-$today"
+    "file-system-id"   = "<source-fs-id-from-B1>"
+    "KmsKeyId"         = "arn:aws:kms:eu-west-1:<account-id>:key/<kms-key-id-from-B2>"
+} | ConvertTo-Json -Compress
+$metadata | Out-File -FilePath "$env:TEMP\efs-restore-metadata.json" -Encoding ASCII -NoNewline
+Get-Content "$env:TEMP\efs-restore-metadata.json"
+```
+
+### B4. Start restore job
+
+**Linux/Mac:**
 
 ```bash
 aws backup start-restore-job \
   --recovery-point-arn <arn-from-B1> \
   --metadata file:///tmp/efs-restore-metadata.json \
-  --iam-role-arn <aws_backup_role_arn> \
+  --iam-role-arn arn:aws:iam::<account-id>:role/moodle-academy-pilot-aws-backup-role \
   --resource-type EFS \
   --region eu-west-1
 ```
 
-> `<aws_backup_role_arn>` — known ARN: `arn:aws:iam::288761747885:role/moodle-academy-pilot-aws-backup-role` (also visible in recovery point details from B1's output, field `IamRoleArn`).
+**PowerShell:**
+
+```powershell
+aws backup start-restore-job `
+  --recovery-point-arn "<arn-from-B1>" `
+  --metadata "file://$env:TEMP\efs-restore-metadata.json" `
+  --iam-role-arn "arn:aws:iam::<account-id>:role/moodle-academy-pilot-aws-backup-role" `
+  --resource-type EFS `
+  --region eu-west-1
+```
 
 Record the `RestoreJobId` from the response.
 
-### B4. Wait for completion
+### B5. Wait for completion
 
 ```bash
 aws backup describe-restore-job \
-  --restore-job-id <job-id> \
+  --restore-job-id <job-id-from-B4> \
   --region eu-west-1 \
-  --query '{Status:Status,CreatedResourceArn:CreatedResourceArn}'
+  --query '{Status:Status,Pct:PercentDone,Created:CreatedResourceArn}'
 ```
 
-Poll every 2 minutes until `Status` is `COMPLETED`. Record the new EFS ID from `CreatedResourceArn`.
+Poll every 1 minute. Progression: `PENDING` -> `RUNNING` -> `COMPLETED` (or `FAILED`). On COMPLETED, record the new EFS ID from `CreatedResourceArn` (after the `file-system/` prefix).
 
-### B5. Mount and verify via EC2
+### B6. Create a mount target
+
+AWS Backup creates the file system but does NOT create mount targets. We need at least one in the active AZ before we can mount:
 
 ```bash
-aws ssm start-session --target <instance-id> --region eu-west-1
+aws ec2 describe-security-groups \
+  --filters "Name=group-name,Values=moodle-academy-pilot-efs-sg" \
+  --region eu-west-1 --query "SecurityGroups[0].GroupId" --output text
 ```
 
-In the session:
+Note the EFS SG ID. Then create the mount target in the eu-west-1a private subnet (the same one used by production EFS - find via Terraform output or RDS subnet group):
+
 ```bash
-sudo mkdir /mnt/restore-test
-sudo mount -t efs -o tls,iam <new-efs-id>:/ /mnt/restore-test
-ls /mnt/restore-test
-# Verify file structure matches /var/moodledata (moodledata directory, filedir/, etc.)
+aws efs create-mount-target \
+  --file-system-id <new-efs-id-from-B5> \
+  --subnet-id <eu-west-1a-private-subnet-id> \
+  --security-groups <efs-sg-id> \
+  --region eu-west-1
 ```
 
-### B6. DELETE the restored EFS (CRITICAL)
+Record the `MountTargetId` and the assigned `IpAddress` from the response. Poll until `available`:
 
 ```bash
-# In SSM session:
+aws efs describe-mount-targets \
+  --file-system-id <new-efs-id> \
+  --region eu-west-1 \
+  --query "MountTargets[0].LifeCycleState" --output text
+```
+
+Takes ~60-90 seconds.
+
+### B7. Mount and verify via EC2
+
+Back in SSM on production EC2:
+
+```bash
+sudo mkdir -p /mnt/restore-test
+```
+
+Mount with the IP address option (bypasses DNS lookup and the `ec2:DescribeAvailabilityZones` API call that the instance role doesn't have):
+
+```bash
+sudo mount -t efs -o tls,iam,mounttargetip=<mount-target-ip-from-B6> <new-efs-id>:/ /mnt/restore-test
+```
+
+Inspect (note: Moodle dataroot is group-only, so we use `sudo` for ls):
+
+```bash
+sudo ls -la /mnt/restore-test/
+```
+
+AWS Backup wraps restored content in a subdirectory named `aws-backup-restore_<timestamp>/`. Look inside:
+
+```bash
+sudo ls -la /mnt/restore-test/aws-backup-restore_*/
+sudo ls -la /mnt/restore-test/aws-backup-restore_*/.moodle-installed
+```
+
+Expected: directory structure matching `/var/moodledata/` - `cache/`, `filedir/`, `lang/`, `localcache/`, `muc/`, `sessions/`, `temp/`, `trashdir/` - plus the `.moodle-installed` marker file from T-029.5 (proves the rebuild-safety pattern survives backup/restore).
+
+### B8. DELETE the restored EFS and mount target (CRITICAL)
+
+In SSM:
+
+```bash
 sudo umount /mnt/restore-test
 sudo rmdir /mnt/restore-test
 exit
+```
 
-# Back in local terminal:
+Back in your local terminal, **mount target first** (EFS won't delete while a mount target exists):
+
+```bash
+aws efs delete-mount-target \
+  --mount-target-id <mount-target-id-from-B6> \
+  --region eu-west-1
+
+# Poll until [] (typically 30-60 sec):
+aws efs describe-mount-targets \
+  --file-system-id <new-efs-id> \
+  --region eu-west-1 --query "MountTargets" --output json
+```
+
+Then the file system:
+
+```bash
 aws efs delete-file-system \
   --file-system-id <new-efs-id> \
   --region eu-west-1
+```
+
+Verify:
+
+```bash
+aws efs describe-file-systems \
+  --file-system-id <new-efs-id> \
+  --region eu-west-1 2>&1 | grep -i "FileSystemNotFound\|not exist"
 ```
 
 ---
 
 ## Post-drill documentation
 
-Fill this in before closing the terminal:
-
-```
-Drill date:           _______________
-Wall-clock start:     _______________
-Wall-clock end:       _______________
-Total elapsed:        _______________ minutes
-
-RDS snapshot age:     _______________ hours  (RPO pass if ≤ 24h)
-RDS restore time:     _______________ minutes
-EFS restore time:     _______________ minutes
-Total RTO:            _______________ hours  (pass if < 4h)
-
-RDS artifact deleted: ☐
-EFS artifact deleted: ☐
-
-Deviations from this procedure:
-  _______________
-
-AWS API errors encountered:
-  _______________
-
-Drill result: PASS / FAIL
-```
-
----
-
-## Common failures
-
-**No automated snapshots yet**
-RDS retention starts after the first backup window (nightly, ~02:00 UTC). Run the drill at least 24h after first apply.
-
-**RDS restore fails with "InvalidParameterValue" on subnet group**
-The subnet group name must match what Terraform created. Look it up:
-```bash
-aws rds describe-db-subnet-groups --region eu-west-1 \
-  --query 'DBSubnetGroups[?contains(DBSubnetGroupName, `moodle`)].DBSubnetGroupName'
-```
-
-**psql connection refused**
-The restored instance's security group only allows inbound from the web SG. You must connect via the EC2 instance (SSM), not from your laptop.
-
-**EFS restore job stuck "PENDING"**
-Check the AWS Backup vault permissions and verify the IAM role has both `AWSBackupServiceRolePolicyForBackup` and `AWSBackupServiceRolePolicyForRestores`.
-
-**Mount fails with "access denied" or "operation not permitted"**
-EFS file system policy enforces `aws:SecureTransport`. Ensure you use `-o tls` in the mount command. Also verify the restored EFS has a mount target in eu-west-1a.
-
----
-
-## Drill history
-
-| Date | RTO (min) | RPO (h) | Result | Notes |
-|---|---|---|---|---|
-| *(first drill in T-031)* | | | | |
+### First drill (T-031 baseline)
