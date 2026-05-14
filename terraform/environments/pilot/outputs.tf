@@ -1,1 +1,1 @@
-# Workload outputs. Currently empty - populated as modules are added.
+# Workload outputs. Most operator-facing values are surfaced via module outputs and queried via terraform output against each module; consolidated outputs here are added on demand.
