@@ -1,1 +1,1 @@
-# Workload outputs. Most operator-facing values are surfaced via module outputs and queried via terraform output against each module; consolidated outputs here are added on demand.
+# Workload outputs. Most operator-facing values are surfaced via module outputs; for the small consolidated set the operator needs at the workload root, add output blocks here as needed.
