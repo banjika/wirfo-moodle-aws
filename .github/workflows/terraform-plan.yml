@@ -1,13 +1,12 @@
 name: Terraform Plan
 
+# Triggers on every PR so the required check is always reported.
+# The "Check for Terraform changes" step decides whether to run the
+# real plan or short-circuit with a success. Docs-only PRs report
+# success in ~10 seconds without running the full plan.
+
 on:
   pull_request:
-    paths:
-      - 'terraform/**'
-      - '.github/workflows/terraform-*.yml'
-      - '.tflint.hcl'
-      - 'tfsec.yml'
-      - '.checkov.yaml'
 
 permissions:
   id-token: write       # OIDC token request
@@ -34,10 +33,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check for Terraform changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            terraform:
+              - 'terraform/**'
+              - '.github/workflows/terraform-*.yml'
+              - '.tflint.hcl'
+              - 'tfsec.yml'
+              - '.checkov.yaml'
+
+      - name: Report skip when no Terraform changes
+        if: steps.changes.outputs.terraform != 'true'
+        run: |
+          echo "::notice title=Plan skipped::No Terraform-relevant files changed. This PR touches only documentation or other non-Terraform paths."
+
       # Fail fast before expensive tool downloads if required vars are absent.
-      # Set these under: Settings → Secrets and variables → Actions → Variables
+      # Set these under: Settings -> Secrets and variables -> Actions -> Variables
       # Use RFC 2606 stub values for plan CI (e.g., test@example.com).
-      - name: Preflight — required repo variables
+      - name: Preflight - required repo variables
+        if: steps.changes.outputs.terraform == 'true'
         run: |
           missing=()
           [[ -z "${{ vars.AWS_DEPLOY_ROLE_ARN }}" ]] && missing+=("AWS_DEPLOY_ROLE_ARN")
@@ -47,12 +64,13 @@ jobs:
           if [[ ${#missing[@]} -gt 0 ]]; then
             echo "ERROR: Missing required GitHub Actions repo variables:"
             printf '  - %s\n' "${missing[@]}"
-            printf '\nSet under: Settings → Secrets and variables → Actions → Variables\n'
+            printf '\nSet under: Settings -> Secrets and variables -> Actions -> Variables\n'
             printf 'Use RFC 2606 stub values for plan CI (e.g., test@example.com).\n'
             exit 1
           fi
 
       - name: Setup Terraform
+        if: steps.changes.outputs.terraform == 'true'
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
@@ -60,6 +78,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Setup tflint
+        if: steps.changes.outputs.terraform == 'true'
         uses: terraform-linters/setup-tflint@v4
         with:
           tflint_version: v${{ env.TFLINT_VERSION }}
@@ -67,20 +86,24 @@ jobs:
       # Direct binary install; tfsec-action is all-in-one and can't be separated
       # from its run, so we install manually to control the quality-gate step.
       - name: Setup tfsec
+        if: steps.changes.outputs.terraform == 'true'
         run: |
           curl -sLo /tmp/tfsec "https://github.com/aquasecurity/tfsec/releases/download/v${{ env.TFSEC_VERSION }}/tfsec-linux-amd64"
           chmod +x /tmp/tfsec
           sudo mv /tmp/tfsec /usr/local/bin/tfsec
 
       - name: Setup Python
+        if: steps.changes.outputs.terraform == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install checkov
+        if: steps.changes.outputs.terraform == 'true'
         run: pip install checkov==${{ env.CHECKOV_VERSION }}
 
       - name: Configure AWS credentials via OIDC
+        if: steps.changes.outputs.terraform == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
@@ -88,43 +111,53 @@ jobs:
           audience: sts.amazonaws.com
 
       - name: Verify AWS identity
+        if: steps.changes.outputs.terraform == 'true'
         run: aws sts get-caller-identity
 
       # ===== QUALITY GATE 1: terraform fmt =====
       - name: Terraform fmt
+        if: steps.changes.outputs.terraform == 'true'
         run: terraform fmt -check -recursive
 
       # ===== QUALITY GATE 2: tflint =====
       - name: tflint init
+        if: steps.changes.outputs.terraform == 'true'
         run: tflint --init
 
       - name: tflint
+        if: steps.changes.outputs.terraform == 'true'
         run: tflint --recursive
 
       # ===== QUALITY GATE 3: tfsec =====
       - name: tfsec
+        if: steps.changes.outputs.terraform == 'true'
         run: tfsec . --config-file tfsec.yml --soft-fail=false
 
       # ===== QUALITY GATE 4: checkov per-subtree =====
       # Checkov resolves config from CWD, not --directory; per-subtree invocation
-      # ensures the right scope is scanned. See .checkov.yaml §INVOCATION STRATEGY.
-      - name: checkov — bootstrap
+      # ensures the right scope is scanned. See .checkov.yaml INVOCATION STRATEGY.
+      - name: checkov - bootstrap
+        if: steps.changes.outputs.terraform == 'true'
         run: checkov --directory terraform/bootstrap --framework terraform --quiet
 
-      - name: checkov — pilot
+      - name: checkov - pilot
+        if: steps.changes.outputs.terraform == 'true'
         run: checkov --directory terraform/environments/pilot --framework terraform --quiet
 
       # ===== QUALITY GATE 5: terraform validate =====
       - name: Terraform init
+        if: steps.changes.outputs.terraform == 'true'
         run: terraform -chdir=terraform/environments/pilot init -input=false
 
       - name: Terraform validate
+        if: steps.changes.outputs.terraform == 'true'
         run: terraform -chdir=terraform/environments/pilot validate
 
       # ===== QUALITY GATE 6: terraform plan =====
       # set -o pipefail propagates terraform's exit code through tee; without it
       # tee's success masks a failed plan.
       - name: Terraform plan
+        if: steps.changes.outputs.terraform == 'true'
         id: plan
         run: |
           set -o pipefail
@@ -135,6 +168,7 @@ jobs:
             -no-color -input=false -out=tfplan 2>&1 | tee plan.txt
 
       - name: Format plan for PR comment
+        if: steps.changes.outputs.terraform == 'true'
         id: plan_summary
         run: |
           {
@@ -142,12 +176,13 @@ jobs:
             head -n 500 plan.txt
             if [[ $(wc -l < plan.txt) -gt 500 ]]; then
               echo ''
-              echo '... (truncated — full output in workflow logs)'
+              echo '... (truncated - full output in workflow logs)'
             fi
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
 
       - name: Post plan to PR
+        if: steps.changes.outputs.terraform == 'true'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: terraform-plan
@@ -156,11 +191,3 @@ jobs:
 
             <details>
             <summary>Click to expand plan output</summary>
-
-            ```
-            ${{ steps.plan_summary.outputs.plan_output }}
-            ```
-
-            </details>
-
-            _Commit: `${{ github.event.pull_request.head.sha }}`_
